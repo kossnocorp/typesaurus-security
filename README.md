@@ -1,4 +1,4 @@
-# 🦕 Securodon
+# 🦕 Typesaurus Security
 
 Type-safe natural DSL for writing Firestore security rules.
 

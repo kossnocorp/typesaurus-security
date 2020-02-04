@@ -27,5 +27,5 @@ publish-next: build
 	cd lib && npm publish --access public --tag next
 
 docs:
-	@${BIN}/typedoc --theme minimal --name Securodon
+	@${BIN}/typedoc --theme minimal --name Typesaurus Security
 .PHONY: docs

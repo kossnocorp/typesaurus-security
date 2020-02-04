@@ -1,5 +1,5 @@
 {
-  "name": "securodon",
+  "name": "@typesaurus/security",
   "version": "0.1.0",
   "description": "Type-safe natural DSL for writing Firestore security rules",
   "keywords": [
@@ -8,7 +8,7 @@
     "TypeScript"
   ],
   "main": "index.js",
-  "repository": "https://github.com/kossnocorp/securodon",
+  "repository": "https://github.com/kossnocorp/typesaurus-security",
   "author": "Sasha Koss <koss@nocorp.me>",
   "license": "MIT",
   "devDependencies": {
