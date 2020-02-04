@@ -31,7 +31,7 @@
     "prettier": "^1.17.1",
     "sinon": "^7.3.2",
     "typedoc": "^0.15.0",
-    "typesaurus": "^5.2.0-beta.1",
+    "typesaurus": "^5.2.0",
     "typescript": "^3.7.4",
     "webpack": "^4.37.0"
   },

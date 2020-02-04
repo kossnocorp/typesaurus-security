@@ -19,9 +19,19 @@ import {
   Resource
 } from '.'
 import { collection, set, add } from 'typesaurus'
-import { injectTestingAdaptor, app } from 'typesaurus/testing'
+import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
 
-injectTestingAdaptor()
+const projectId = 'project-id'
+
+injectTestingAdaptor(testing.initializeTestApp({ projectId }))
+
+function loginUser(uid: string) {
+  setApp(testing.initializeTestApp({ projectId, auth: { uid } }))
+}
+
+function logoutUser() {
+  setApp(testing.initializeTestApp({ projectId, auth: null }))
+}
 
 type User = {
   firstName: string
@@ -326,7 +336,7 @@ describe('stringifyDatabaseRules', () => {
     })
 
     it('generates working security rules', async () => {
-      app('owner-id')
+      loginUser('owner-id')
       await expect(
         add(accounts, {
           ownerId: 'wrong-id',
@@ -354,7 +364,7 @@ describe('stringifyDatabaseRules', () => {
         title: 'Hello, world!',
         projectId: project.ref.id
       })
-      app('another-id')
+      loginUser('another-id')
       await expect(
         add(todos, {
           title: 'Hello, world!',
