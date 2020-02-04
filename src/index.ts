@@ -98,7 +98,7 @@ export function is<Type>(value: Type, type: RulesType): SecurityRuleIs {
 export function get<Model extends object>(
   collection: Collection<Model>,
   id: any
-): Resource<Model> | null {
+): Resource<Model> {
   const idComponent = typeof id === 'string' ? id : `$(${resolve(id)})`
   return resource<Model>(
     `get(/databases/$(database)/documents/${collection.path}/${idComponent})`
