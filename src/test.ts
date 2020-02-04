@@ -8,13 +8,15 @@ import {
   includes,
   get,
   secure,
-  request,
   stringifyCollectionRules,
   stringifyRule,
   stringifyRules,
   stringifyDatabaseRules,
   is,
-  proxy
+  proxy,
+  Request,
+  rule,
+  Resource
 } from '.'
 import { collection, set, add } from 'typesaurus'
 import { injectTestingAdaptor, app } from 'typesaurus/testing'
@@ -32,11 +34,13 @@ type Account = {
 }
 
 type Project = {
+  title: string
   accountId: string
 }
 
 type Todo = {
   projectId: string
+  title: string
 }
 
 const users = collection<User>('users')
@@ -191,53 +195,74 @@ describe('get', () => {
   })
 })
 
-describe('request', () => {
-  describe('read', () => {
-    it('generates read request proxy', () => {
-      const readRequest = request('read')
-      assert(resolve(readRequest) === 'request')
-      assert(resolve(readRequest.auth) === 'request.auth')
-      assert(resolve(readRequest.auth.uid) === 'request.auth.uid')
-    })
-  })
-})
-
-const accountRules = secure(accounts, {
-  write: ({ request, resource }) => {
+const accountsRules = secure(accounts, [
+  rule('read', ({ request, resource }) => {
     return [
-      notEqual(request.auth.uid, null),
+      isAuthenticated(request),
+      includes(resource.data.memberIds, request.auth.uid)
+    ]
+  }),
+
+  rule('write', ({ request }) => {
+    return [
+      isAuthenticated(request),
       equal(request.resource.data.ownerId, request.auth.uid),
       is(request.resource.data.memberIds, 'list'),
       equal(request.resource.data.memberIds.size(), 1),
       equal(request.resource.data.memberIds[0], request.auth.uid)
     ]
-  }
-})
+  })
+])
 
-const todoRules = secure(todos, {
-  read: ({ request, resource }) => {
+const projectsRules = secure(projects, [
+  rule('read', ({ resource, request }) => {
+    const account = get(accounts, resource.data.accountId)
+    return [
+      isAuthenticated(request),
+      includes(account.data.memberIds, request.auth.uid)
+    ]
+  }),
+
+  rule('write', ({ request }) => {
+    const account = get(accounts, request.resource.data.accountId)
+    return [
+      isAuthenticated(request),
+      includes(account.data.memberIds, request.auth.uid),
+      is(request.resource.data.title, 'string')
+    ]
+  })
+])
+
+const todosRules = secure(todos, [
+  rule('read', ({ request, resource }) => {
+    const project = get(projects, resource.data.projectId)
+    const account = get(accounts, project.data.accountId)
+    return [isAuthenticated(request), isMemberOf(request, account)]
+  }),
+
+  rule('write', ({ request }) => {
+    const resource = request.resource
     const project = get(projects, resource.data.projectId)
     const account = get(accounts, project.data.accountId)
     return [
-      notEqual(request.auth.uid, null),
-      includes(account.data.memberIds, request.auth.uid)
+      isAuthenticated(request),
+      isMemberOf(request, account),
+      is(resource.data.title, 'string')
     ]
-  }
-})
+  })
+])
+
+function isMemberOf(request: Request<any>, account: Resource<Account>) {
+  return includes(account.data.memberIds, request.auth.uid)
+}
+
+function isAuthenticated(request: Request<any>) {
+  return notEqual(request.auth.uid, null)
+}
 
 describe('secure', () => {
   it('generates security rules', () => {
-    assert.deepEqual(todoRules, {
-      collection: todos,
-      read: [
-        ['!=', 'request.auth.uid', 'null'],
-        [
-          'in',
-          'get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds',
-          'request.auth.uid'
-        ]
-      ]
-    })
+    expect(todosRules).toMatchSnapshot()
   })
 })
 
@@ -273,43 +298,26 @@ describe('stringifyRules', () => {
 
 describe('stringifyCollectionRules', () => {
   it('stringifies collection security rules', () => {
-    assert(
-      stringifyCollectionRules(todoRules) ==
-        `
-match /todos/{resourceId} {
-  allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
-}
-`.trim()
-    )
+    expect(stringifyCollectionRules(todosRules)).toMatchSnapshot()
   })
 })
 
 describe('stringifyDatabaseRules', () => {
   it('stringifies database security rules', () => {
-    assert(
-      stringifyDatabaseRules([accountRules, todoRules]) ==
-        `
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /accounts/{resourceId} {
-      allow write: if request.auth.uid != null && request.resource.data.ownerId == request.auth.uid && request.resource.data.memberIds is list && request.resource.data.memberIds.size() == 1 && request.resource.data.memberIds[0] == request.auth.uid
-    }
-
-    match /todos/{resourceId} {
-      allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
-    }
-  }
-}
-`.trim()
-    )
+    expect(
+      stringifyDatabaseRules([accountsRules, projectsRules, todosRules])
+    ).toMatchSnapshot()
   })
 
   describe('when the rules are loaded into the Firestore', () => {
     beforeEach(async () => {
       await testing.loadFirestoreRules({
         projectId: 'project-id',
-        rules: stringifyDatabaseRules([accountRules, todoRules])
+        rules: stringifyDatabaseRules([
+          accountsRules,
+          projectsRules,
+          todosRules
+        ])
       })
     })
 
@@ -319,10 +327,40 @@ service cloud.firestore {
 
     it('generates working security rules', async () => {
       app('owner-id')
+      await expect(
+        add(accounts, {
+          ownerId: 'wrong-id',
+          memberIds: ['wrong-id']
+        })
+      ).rejects.toMatchSnapshot()
       const account = await add(accounts, {
         ownerId: 'owner-id',
         memberIds: ['owner-id']
       })
+
+      await expect(
+        add(projects, {
+          // @ts-ignore
+          title: false,
+          accountId: account.ref.id
+        })
+      ).rejects.toMatchSnapshot()
+      const project = await add(projects, {
+        title: 'Demo project',
+        accountId: account.ref.id
+      })
+
+      await add(todos, {
+        title: 'Hello, world!',
+        projectId: project.ref.id
+      })
+      app('another-id')
+      await expect(
+        add(todos, {
+          title: 'Hello, world!',
+          projectId: project.ref.id
+        })
+      ).rejects.toMatchSnapshot()
     })
   })
 })

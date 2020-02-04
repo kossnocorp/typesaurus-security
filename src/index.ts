@@ -60,13 +60,13 @@ export function resolve(value: any): string {
   }
 }
 
-export type SecurityRule =
+export type SecurityRule<_Model> =
   | SecurityRuleEqual<any>
   | SecurityRuleNotEqual<any>
   | SecurityRuleIncludes<any>
   | SecurityRuleIs
 
-export type RulesType = 'list' | 'map'
+export type RulesType = 'list' | 'map' | 'string'
 
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
@@ -105,49 +105,9 @@ export function get<Model extends object>(
   )
 }
 
-type CommonRequest<Model extends object> = {
+export type Request<Model extends object> = {
   auth: Auth
   resource: Resource<Model>
-}
-
-export type ReadRequest<Model extends object> = CommonRequest<Model>
-
-export type WriteRequest<Model extends object> = CommonRequest<Model>
-
-export type RequestType = 'read' | 'write'
-
-export function request<Model extends object>(type: 'read'): ReadRequest<Model>
-
-export function request<Model extends object>(
-  type: 'write'
-): WriteRequest<Model>
-
-export function request<Model extends object>(
-  type: RequestType
-): RequestType extends 'read' ? ReadRequest<Model> : WriteRequest<Model> {
-  if (type === 'read') {
-    return proxy<ReadRequest<Model>>('request')
-  } else {
-    return proxy<WriteRequest<Model>>('request')
-  }
-}
-
-type SecurityRulesResolver<Model extends object> = {
-  read?: ({
-    request,
-    resource
-  }: {
-    request: ReadRequest<Model>
-    resource: Resource<Model>
-  }) => SecurityRule[]
-
-  write?: ({
-    request,
-    resource
-  }: {
-    request: WriteRequest<Model>
-    resource: Resource<Model>
-  }) => SecurityRule[]
 }
 
 type Auth =
@@ -158,32 +118,51 @@ type Auth =
       uid: null
     }
 
+export type Rules<Model> = {
+  [ruleTypes: string]: SecurityRule<Model>[]
+}
+
 export type CollectionSecurityRules<Model> = {
   collection: Collection<Model>
-  read?: SecurityRule[]
-  write?: SecurityRule[]
+  rules: Rules<Model>
 }
 
 export function secure<Model extends object>(
   collection: Collection<Model>,
-  rules: SecurityRulesResolver<Model> = {}
+  rules: Rules<Model>[]
 ): CollectionSecurityRules<Model> {
-  const securityRules: CollectionSecurityRules<Model> = { collection }
-  const rulesResource = resource<Model>('resource')
-  if (rules.read)
-    securityRules.read = rules.read({
-      request: request('read'),
-      resource: rulesResource
-    })
-  if (rules.write)
-    securityRules.write = rules.write({
-      request: request('write'),
-      resource: rulesResource
-    })
-  return securityRules
+  const allRules = rules.reduce(
+    (allRules, rules) => Object.assign(allRules, rules),
+    {} as Rules<Model>
+  )
+  return { collection, rules: allRules }
 }
 
-export function stringifyRule(rule: SecurityRule): string {
+export type RuleType = 'read' | 'write'
+
+export type RuleResolver<Model extends object> = ({
+  request,
+  resource
+}: {
+  request: Request<Model>
+  resource: Resource<Model>
+}) => SecurityRule<Model>[]
+
+export function rule<Model extends object>(
+  ruleTypes: RuleType | RuleType[],
+  resolver: RuleResolver<Model>
+): Rules<Model> {
+  const request = proxy<Request<Model>>('request')
+  const rulesResource = resource<Model>('resource')
+  return {
+    [([] as RuleType[]).concat(ruleTypes).join(',')]: resolver({
+      request,
+      resource: rulesResource
+    })
+  }
+}
+
+export function stringifyRule(rule: SecurityRule<any>): string {
   switch (rule[0]) {
     case '==':
     case '!=':
@@ -195,19 +174,21 @@ export function stringifyRule(rule: SecurityRule): string {
   }
 }
 
-export function stringifyRules(rules: SecurityRule[]) {
+export function stringifyRules(rules: SecurityRule<any>[]) {
   return rules.map(stringifyRule).join(' && ')
 }
 
-export function stringifyCollectionRules<Model>(
-  rules: CollectionSecurityRules<Model>
-): string {
-  const allows: string[] = []
-  if (rules.read) allows.push(`allow read: if ${stringifyRules(rules.read)}`)
-  if (rules.write) allows.push(`allow write: if ${stringifyRules(rules.write)}`)
+export function stringifyCollectionRules<Model>({
+  collection,
+  rules
+}: CollectionSecurityRules<Model>): string {
+  const allows = Object.entries(rules).map(
+    ([ruleTypes, securityRules]) =>
+      `allow ${ruleTypes}: if ${stringifyRules(securityRules)}`
+  )
   return `
-match /${rules.collection.path}/{resourceId} {
-${allows.map(str => indent(str)).join('\n')}
+match /${collection.path}/{resourceId} {
+${allows.map(str => indent(str)).join('\n\n')}
 }
 `.trim()
 }

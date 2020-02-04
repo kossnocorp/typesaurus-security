@@ -1,0 +1,89 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`secure generates security rules 1`] = `
+Object {
+  "collection": Object {
+    "__type__": "collection",
+    "path": "todos",
+  },
+  "rules": Object {
+    "read": Array [
+      Array [
+        "!=",
+        "request.auth.uid",
+        "null",
+      ],
+      Array [
+        "in",
+        "get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds",
+        "request.auth.uid",
+      ],
+    ],
+    "write": Array [
+      Array [
+        "!=",
+        "request.auth.uid",
+        "null",
+      ],
+      Array [
+        "in",
+        "get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds",
+        "request.auth.uid",
+      ],
+      Array [
+        "is",
+        "request.resource.data.title",
+        "string",
+      ],
+    ],
+  },
+}
+`;
+
+exports[`stringifyCollectionRules stringifies collection security rules 1`] = `
+"match /todos/{resourceId} {
+  allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
+
+  allow write: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+}"
+`;
+
+exports[`stringifyDatabaseRules stringifies database security rules 1`] = `
+"rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /accounts/{resourceId} {
+      allow read: if request.auth.uid != null && request.auth.uid in resource.data.memberIds
+    
+      allow write: if request.auth.uid != null && request.resource.data.ownerId == request.auth.uid && request.resource.data.memberIds is list && request.resource.data.memberIds.size() == 1 && request.resource.data.memberIds[0] == request.auth.uid
+    }
+
+    match /projects/{resourceId} {
+      allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds
+    
+      allow write: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(request.resource.data.accountId)).data.memberIds && request.resource.data.title is string
+    }
+
+    match /todos/{resourceId} {
+      allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
+    
+      allow write: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+    }
+  }
+}"
+`;
+
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules 1`] = `
+[FirebaseError: 7 PERMISSION_DENIED: 
+false for 'create' @ L7]
+`;
+
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules 2`] = `
+[FirebaseError: 7 PERMISSION_DENIED: 
+false for 'create' @ L13]
+`;
+
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules 3`] = `
+[FirebaseError: 7 PERMISSION_DENIED: 
+false for 'create' @ L19]
+`;
