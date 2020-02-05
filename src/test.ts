@@ -16,7 +16,9 @@ import {
   proxy,
   Request,
   rule,
-  Resource
+  Resource,
+  not,
+  or
 } from '.'
 import { collection, set, add } from 'typesaurus'
 import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
@@ -185,6 +187,32 @@ describe('describe', () => {
   })
 })
 
+describe('not', () => {
+  it('generates AST for not', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = not(is(accountResource.data.memberIds, 'list'))
+    assert.deepEqual(result, [
+      'not',
+      ['is', 'request.resource.data.memberIds', 'list']
+    ])
+  })
+})
+
+describe('or', () => {
+  it('generatesnAST for or', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = or(
+      [not(is(accountResource.data.memberIds, 'list'))],
+      [includes(accountResource.data.memberIds, '123')]
+    )
+    assert.deepEqual(result, [
+      'or',
+      [['not', ['is', 'request.resource.data.memberIds', 'list']]],
+      [['in', 'request.resource.data.memberIds', '"123"']]
+    ])
+  })
+})
+
 describe('get', () => {
   it('generates proxy for get result', () => {
     const owner = get(users, '123')
@@ -204,6 +232,21 @@ describe('get', () => {
     )
   })
 })
+
+const usersRules = secure(users, [
+  rule(['read', 'write'], ({ request, resourceId }) => {
+    return [equal(request.auth.uid, resourceId)]
+  }),
+
+  rule('write', ({ request }) => {
+    return [
+      or(
+        [not(includes(request.resource.data, 'firstName'))],
+        [is(request.resource.data.firstName, 'string')]
+      )
+    ]
+  })
+])
 
 const accountsRules = secure(accounts, [
   rule('read', ({ request, resource }) => {
@@ -315,7 +358,12 @@ describe('stringifyCollectionRules', () => {
 describe('stringifyDatabaseRules', () => {
   it('stringifies database security rules', () => {
     expect(
-      stringifyDatabaseRules([accountsRules, projectsRules, todosRules])
+      stringifyDatabaseRules([
+        usersRules,
+        accountsRules,
+        projectsRules,
+        todosRules
+      ])
     ).toMatchSnapshot()
   })
 

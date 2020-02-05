@@ -60,13 +60,15 @@ export function resolve(value: any): string {
   }
 }
 
+export type RulesType = 'list' | 'map' | 'string'
+
 export type SecurityRule<_Model> =
   | SecurityRuleEqual<any>
   | SecurityRuleNotEqual<any>
   | SecurityRuleIncludes<any>
   | SecurityRuleIs
-
-export type RulesType = 'list' | 'map' | 'string'
+  | SecurityRuleNot
+  | SecurityRuleOr
 
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
@@ -75,6 +77,10 @@ export type SecurityRuleNotEqual<Type> = ['!=', Type | string, Type | string]
 export type SecurityRuleIncludes<Type> = ['in', string, Type | string]
 
 export type SecurityRuleIs = ['is', string, string]
+
+export type SecurityRuleNot = ['not', SecurityRule<any>]
+
+export type SecurityRuleOr = ['or', SecurityRule<any>[], SecurityRule<any>[]]
 
 export function equal<Type>(a: Type, b: Type): SecurityRuleEqual<Type> {
   return ['==', resolve(a), resolve(b)]
@@ -93,6 +99,17 @@ export function includes<Type>(
 
 export function is<Type>(value: Type, type: RulesType): SecurityRuleIs {
   return ['is', resolve(value), type]
+}
+
+export function not(rule: SecurityRule<any>): SecurityRuleNot {
+  return ['not', rule]
+}
+
+export function or(
+  rulesA: SecurityRule<any>[],
+  rulesB: SecurityRule<any>[]
+): SecurityRuleOr {
+  return ['or', rulesA, rulesB]
 }
 
 export function get<Model extends object>(
@@ -140,13 +157,15 @@ export function secure<Model extends object>(
 
 export type RuleType = 'read' | 'write'
 
-export type RuleResolver<Model extends object> = ({
-  request,
-  resource
-}: {
+export type RuleContext<Model extends object> = {
   request: Request<Model>
   resource: Resource<Model>
-}) => SecurityRule<Model>[]
+  resourceId: string
+}
+
+export type RuleResolver<Model extends object> = (
+  context: RuleContext<Model>
+) => SecurityRule<Model>[]
 
 export function rule<Model extends object>(
   ruleTypes: RuleType | RuleType[],
@@ -155,9 +174,10 @@ export function rule<Model extends object>(
   const request = proxy<Request<Model>>('request')
   const rulesResource = resource<Model>('resource')
   return {
-    [([] as RuleType[]).concat(ruleTypes).join(',')]: resolver({
+    [([] as RuleType[]).concat(ruleTypes).join(', ')]: resolver({
       request,
-      resource: rulesResource
+      resource: rulesResource,
+      resourceId: proxy<string>('resourceId')
     })
   }
 }
@@ -171,6 +191,12 @@ export function stringifyRule(rule: SecurityRule<any>): string {
 
     case 'in':
       return `${rule[2]} in ${rule[1]}`
+
+    case 'not':
+      return `!(${stringifyRule(rule[1])})`
+
+    case 'or':
+      return `(${stringifyRules(rule[1])}) || (${stringifyRules(rule[2])})`
   }
 }
 
@@ -217,5 +243,5 @@ function indentAll(str: string, indentSize: number = 1) {
 }
 
 function indent(str: string, indentSize: number = 1) {
-  return new Array(indentSize).fill('  ').join('') + str
+  return str ? new Array(indentSize).fill('  ').join('') + str : str
 }
