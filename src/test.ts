@@ -1,36 +1,38 @@
-import assert from 'assert'
 import {
-  initializeTestApp,
   clearFirestoreData,
+  initializeTestApp,
   loadFirestoreRules
 } from '@firebase/rules-unit-testing'
+import assert from 'assert'
+import { add, collection } from 'typesaurus'
+import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
 import {
+  and,
+  context,
   equal,
-  notEqual,
-  resolve,
-  resource,
-  includes,
   get,
-  secure,
-  stringifyCollectionRules,
-  stringifyRule,
-  stringifyRules,
-  stringifyDatabaseRules,
+  includes,
   is,
-  proxy,
-  Request,
-  rule,
-  Resource,
-  not,
-  or,
   less,
   lessOrEqual,
+  List,
   more,
   moreOrEqual,
-  and
+  not,
+  notEqual,
+  or,
+  proxy,
+  Request,
+  resolve,
+  resource,
+  Resource,
+  rule,
+  secure,
+  stringifyCollectionRules,
+  stringifyDatabaseRules,
+  stringifyRule,
+  stringifyRules
 } from '.'
-import { collection, set, add } from 'typesaurus'
-import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
 
 const projectId = 'project-id'
 
@@ -369,6 +371,29 @@ describe('get', () => {
   })
 })
 
+describe('context', () => {
+  it('includes request', () => {
+    type Model = { foo: string; bar: number }
+    const { request } = context<Model>()
+    assertType<string>(request.auth.uid)
+    assertType<Model>(request.resource.data)
+    assertType<List<'foo' | 'bar'>>(request.writeFields)
+  })
+
+  it('includes resource', () => {
+    type Model = { foo: string; bar: number }
+    const { resource } = context<Model>()
+    assertType<Model>(resource.data)
+  })
+
+  it('includes resourceId', () => {
+    const { resourceId } = context()
+    assertType<string>(resourceId)
+  })
+})
+
+function assertType<Type>(_: Type) {}
+
 const usersRules = secure(users, [
   rule(['read', 'write'], ({ request, resourceId }) => {
     return [equal(request.auth.uid, resourceId)]
@@ -497,10 +522,8 @@ describe('stringifyRule', () => {
 describe('stringifyRules', () => {
   it('stringifies rules and concatenates them with &&', () => {
     assert(
-      stringifyRules([
-        ['!=', '1', '2'],
-        ['in', '[1, 2, 3]', '1']
-      ]) === '1 != 2 && 1 in [1, 2, 3]'
+      stringifyRules([['!=', '1', '2'], ['in', '[1, 2, 3]', '1']]) ===
+        '1 != 2 && 1 in [1, 2, 3]'
     )
   })
 })

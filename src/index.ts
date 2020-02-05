@@ -2,19 +2,20 @@ import { Collection } from 'typesaurus'
 
 export function generateRulesAST() {}
 
-export type List<Item, ListSource extends Array<Item>> = {
+export type List<Item> = {
   [index: number]: Item
   size: () => number
-  // TODO: Add the List properties
+  hasOnly: (keys: Item[]) => boolean
 }
 
 export type Map<MapSource extends object> = {
   [FieldName in keyof MapSource]: MapSource[FieldName] extends Array<infer Item>
-    ? List<Item, MapSource[FieldName]>
-    : MapSource[FieldName] extends Array<infer Item>
+    ? List<Item>
+    : MapSource[FieldName] extends object
     ? Map<MapSource[FieldName]>
     : MapSource[FieldName]
-  // TODO: Add the Map fields
+} & {
+  keys: () => List<keyof MapSource>
 }
 
 export type Resource<Model extends object> = {
@@ -135,7 +136,7 @@ export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
 }
 
 export function includes<Type>(
-  array: List<Type, Array<Type>>,
+  array: List<Type>,
   item: Type
 ): SecurityRuleIncludes<Type>
 
@@ -145,7 +146,7 @@ export function includes<Type extends object>(
 ): SecurityRuleIncludes<Type>
 
 export function includes<Type extends object>(
-  array: List<Type, Array<Type>> | Map<Type>,
+  array: List<Type> | Map<Type>,
   item: Type | keyof Type
 ): SecurityRuleIncludes<Type> {
   return ['in', resolve(array), resolve(item)]
@@ -210,6 +211,7 @@ export function get<Model extends object>(
 export type Request<Model extends object> = {
   auth: Auth
   resource: Resource<Model>
+  writeFields: List<keyof Model>
 }
 
 type Auth =
@@ -251,6 +253,16 @@ export type RuleContext<Model extends object> = {
 export type RuleResolver<Model extends object> = (
   context: RuleContext<Model>
 ) => SecurityRule<Model>[]
+
+export function context<Model extends object>() {
+  const request = proxy<Request<Model>>('request')
+  const rulesResource = resource<Model>('resource')
+  return {
+    request,
+    resource: rulesResource,
+    resourceId: proxy<string>('resourceId')
+  }
+}
 
 export function rule<Model extends object>(
   ruleTypes: RuleType | RuleType[],
