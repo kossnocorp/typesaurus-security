@@ -65,6 +65,10 @@ export type RulesType = 'list' | 'map' | 'string'
 export type SecurityRule<_Model> =
   | SecurityRuleEqual<any>
   | SecurityRuleNotEqual<any>
+  | SecurityRuleLess
+  | SecurityRuleLessOrEqual
+  | SecurityRuleMore
+  | SecurityRuleMoreOrEqual
   | SecurityRuleIncludes<any>
   | SecurityRuleIs
   | SecurityRuleNot
@@ -73,6 +77,14 @@ export type SecurityRule<_Model> =
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
 export type SecurityRuleNotEqual<Type> = ['!=', Type | string, Type | string]
+
+export type SecurityRuleLess = ['<', number | string, number | string]
+
+export type SecurityRuleLessOrEqual = ['<=', number | string, number | string]
+
+export type SecurityRuleMore = ['>', number | string, number | string]
+
+export type SecurityRuleMoreOrEqual = ['>=', number | string, number | string]
 
 export type SecurityRuleIncludes<Type> = ['in', string, Type | string]
 
@@ -88,6 +100,22 @@ export function equal<Type>(a: Type, b: Type): SecurityRuleEqual<Type> {
 
 export function notEqual<Type>(a: Type, b: Type): SecurityRuleNotEqual<Type> {
   return ['!=', resolve(a), resolve(b)]
+}
+
+export function less(a: number, b: number): SecurityRuleLess {
+  return ['<', resolve(a), resolve(b)]
+}
+
+export function lessOrEqual(a: number, b: number): SecurityRuleLessOrEqual {
+  return ['<=', resolve(a), resolve(b)]
+}
+
+export function more(a: number, b: number): SecurityRuleMore {
+  return ['>', resolve(a), resolve(b)]
+}
+
+export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
+  return ['>=', resolve(a), resolve(b)]
 }
 
 export function includes<Type>(

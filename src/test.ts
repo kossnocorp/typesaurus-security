@@ -18,7 +18,11 @@ import {
   rule,
   Resource,
   not,
-  or
+  or,
+  less,
+  lessOrEqual,
+  more,
+  moreOrEqual
 } from '.'
 import { collection, set, add } from 'typesaurus'
 import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
@@ -168,6 +172,58 @@ describe('notEqual', () => {
       'request.resource.data.firstName',
       '"Sasha"'
     ])
+  })
+})
+
+describe('less', () => {
+  it('returns AST for !=', () => {
+    assert.deepEqual(less(1, 2), ['<', '1', '2'])
+  })
+
+  it('resolves proxies', () => {
+    type Bill = { amount: number }
+    const bill = proxy<Bill>('bill')
+    const result = less(bill.amount, 14)
+    assert.deepEqual(result, ['<', 'bill.amount', '14'])
+  })
+})
+
+describe('lessOrEqual', () => {
+  it('returns AST for !=', () => {
+    assert.deepEqual(lessOrEqual(1, 2), ['<=', '1', '2'])
+  })
+
+  it('resolves proxies', () => {
+    type Bill = { amount: number }
+    const bill = proxy<Bill>('bill')
+    const result = lessOrEqual(bill.amount, 14)
+    assert.deepEqual(result, ['<=', 'bill.amount', '14'])
+  })
+})
+
+describe('more', () => {
+  it('returns AST for !=', () => {
+    assert.deepEqual(more(1, 2), ['>', '1', '2'])
+  })
+
+  it('resolves proxies', () => {
+    type Bill = { amount: number }
+    const bill = proxy<Bill>('bill')
+    const result = more(bill.amount, 14)
+    assert.deepEqual(result, ['>', 'bill.amount', '14'])
+  })
+})
+
+describe('moreOrEqual', () => {
+  it('returns AST for !=', () => {
+    assert.deepEqual(moreOrEqual(1, 2), ['>=', '1', '2'])
+  })
+
+  it('resolves proxies', () => {
+    type Bill = { amount: number }
+    const bill = proxy<Bill>('bill')
+    const result = moreOrEqual(bill.amount, 14)
+    assert.deepEqual(result, ['>=', 'bill.amount', '14'])
   })
 })
 
