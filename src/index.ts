@@ -93,6 +93,16 @@ export function notEqual<Type>(a: Type, b: Type): SecurityRuleNotEqual<Type> {
 export function includes<Type>(
   array: List<Type, Array<Type>>,
   item: Type
+): SecurityRuleIncludes<Type>
+
+export function includes<Type extends object>(
+  array: Map<Type>,
+  item: keyof Type
+): SecurityRuleIncludes<Type>
+
+export function includes<Type extends object>(
+  array: List<Type, Array<Type>> | Map<Type>,
+  item: Type | keyof Type
 ): SecurityRuleIncludes<Type> {
   return ['in', resolve(array), resolve(item)]
 }

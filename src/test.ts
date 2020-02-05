@@ -238,8 +238,10 @@ const usersRules = secure(users, [
     return [equal(request.auth.uid, resourceId)]
   }),
 
-  rule('write', ({ request }) => {
+  rule('write', ({ request, resourceId }) => {
     return [
+      isAuthenticated(request),
+      equal(resourceId, request.auth.uid),
       or(
         [not(includes(request.resource.data, 'firstName'))],
         [is(request.resource.data.firstName, 'string')]
