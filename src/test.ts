@@ -466,6 +466,22 @@ describe('stringifyRule', () => {
     assert(stringifyRule(['!=', '1', '2']) === '1 != 2')
   })
 
+  it('stringifies less rule', () => {
+    assert(stringifyRule(['<', '1', '2']) === '1 < 2')
+  })
+
+  it('stringifies less or equal rule', () => {
+    assert(stringifyRule(['<=', '1', '2']) === '1 <= 2')
+  })
+
+  it('stringifies more rule', () => {
+    assert(stringifyRule(['>', '1', '2']) === '1 > 2')
+  })
+
+  it('stringifies more or equal rule', () => {
+    assert(stringifyRule(['>=', '1', '2']) === '1 >= 2')
+  })
+
   it('stringifies includes rule', () => {
     assert(stringifyRule(['in', '[1, 2, 3]', '1']) === '1 in [1, 2, 3]')
   })
