@@ -1,13 +1,63 @@
 import { Collection } from 'typesaurus'
 
-export function generateRulesAST() {}
+export * from './Boolean'
 
+/**
+ * List type represents the Firebase's List
+ * https://firebase.google.com/docs/reference/rules/rules.List
+ *
+ * | Firebase | Typesaurus     | Description                                         |
+ * |----------|----------------|-----------------------------------------------------|
+ * | x == y   | equal(x, y)    | Compare lists x and y                               |
+ * | x[i]     | x[i]           | Index operator, get value index i                   |
+ * | x[i:j]   | range(x, y)    | TODO: Range operator, get sublist from index i to j |
+ * | v in x   | includes(x, v) | Check if value v exists in list x                   |
+ */
 export type List<Item> = {
   [index: number]: Item
-  size: () => number
+
+  /**
+   * Determine whether the list contains all elements in another list.
+   * https://firebase.google.com/docs/reference/rules/rules.List#hasAll
+   */
+  hasAll: (keys: Item[]) => boolean
+
+  /**
+   * Determine whether the list contains any element in another list.
+   * https://firebase.google.com/docs/reference/rules/rules.List#hasAny
+   */
+  hasAny: (keys: Item[]) => boolean
+
+  /**
+   * Determine whether all elements in the list are present in another list.
+   * https://firebase.google.com/docs/reference/rules/rules.List#hasAny
+   */
   hasOnly: (keys: Item[]) => boolean
+
+  /**
+   * Join the elements in the list into a string, with a separator.
+   * https://firebase.google.com/docs/reference/rules/rules.List#join
+   */
+  join: (separator: string) => string
+
+  /**
+   * Get the number of values in the list.
+   * https://firebase.google.com/docs/reference/rules/rules.List#size
+   */
+  size: () => number
 }
 
+/**
+ * Map type, used for simple key-value mappings.
+ * https://firebase.google.com/docs/reference/rules/rules.Map
+ *
+ * | Firebase | Typesaurus     | Description                                         |
+ * |----------|----------------|-----------------------------------------------------|
+ * | x == y   | equal(x, y)    | Compare maps x and y                                |
+ * | x[k]     | x[k]           | Index operator, get value at key name k             |
+ * | x.k      | range(x, y)    | Get value at key name k                             |
+ * | k in x   | includes(x, k) | Check if key k exists in map x                      |
+ */
 export type Map<MapSource extends object> = {
   [FieldName in keyof MapSource]: MapSource[FieldName] extends Array<infer Item>
     ? List<Item>
@@ -15,7 +65,32 @@ export type Map<MapSource extends object> = {
     ? Map<MapSource[FieldName]>
     : MapSource[FieldName]
 } & {
+  /**
+   * Returns the value associated with a given search key string.
+   * https://firebase.google.com/docs/reference/rules/rules.Map#get
+   */
+  get: <MapKey extends keyof MapSource>(
+    key: MapKey,
+    defaultValue: MapSource[MapKey]
+  ) => MapSource[MapKey]
+
+  /**
+   * Get the list of keys in the map.
+   * https://firebase.google.com/docs/reference/rules/rules.Map#keys
+   */
   keys: () => List<keyof MapSource>
+
+  /**
+   * Get the number of entries in the map.
+   * https://firebase.google.com/docs/reference/rules/rules.Map#size
+   */
+  size: () => number
+
+  /**
+   * Get the list of values in the map.
+   * https://firebase.google.com/docs/reference/rules/rules.Map#values
+   */
+  values: () => any // TODO?
 }
 
 export type Resource<Model extends object> = {
@@ -29,25 +104,22 @@ export function resource<Model extends object>(
 }
 
 export function proxy<Type>(path: string, data: any = {}): Type {
-  return new Proxy(
-    Object.assign(() => {}, data),
-    {
-      apply(target, thisArg, argumentsList) {
-        return proxy<any>(`${path}(${argumentsList.map(resolve).join(', ')})`)
-      },
+  return new Proxy(Object.assign(() => {}, data), {
+    apply(target, thisArg, argumentsList) {
+      return proxy<any>(`${path}(${argumentsList.map(resolve).join(', ')})`)
+    },
 
-      get(target, prop, receiver) {
-        if (prop === '__resolve__') return path
-        const propStr = prop.toString()
-        const propPath = /^\d+$/.test(propStr) ? `[${propStr}]` : `.${propStr}`
-        return proxy<any>(`${path}${propPath}`)
-      },
+    get(target, prop, receiver) {
+      if (prop === '__resolve__') return path
+      const propStr = prop.toString()
+      const propPath = /^\d+$/.test(propStr) ? `[${propStr}]` : `.${propStr}`
+      return proxy<any>(`${path}${propPath}`)
+    },
 
-      has(target, key) {
-        return key === '__resolve__'
-      }
+    has(target, key) {
+      return key === '__resolve__'
     }
-  ) as Type
+  }) as Type
 }
 
 export function resolve(value: any): string {
