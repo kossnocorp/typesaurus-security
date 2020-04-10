@@ -4,7 +4,7 @@ import {
   loadFirestoreRules
 } from '@firebase/rules-unit-testing'
 import assert from 'assert'
-import { add, collection } from 'typesaurus'
+import { add, collection, update } from 'typesaurus'
 import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
 import {
   and,
@@ -419,16 +419,25 @@ const accountsRules = secure(accounts, [
     ]
   }),
 
-  rule('write', ({ request }) => {
-    return [
-      isAuthenticated(request),
-      equal(request.resource.data.ownerId, request.auth.uid),
-      is(request.resource.data.memberIds, 'list'),
-      equal(request.resource.data.memberIds.size(), 1),
-      equal(request.resource.data.memberIds[0], request.auth.uid)
-    ]
-  })
+  rule('create', ({ request }) => accountWriteRules(request, request.resource)),
+
+  rule('update', ({ request, resource }) =>
+    accountWriteRules(request, resource)
+  )
 ])
+
+function accountWriteRules(
+  request: Request<Account>,
+  resource: Resource<Account>
+) {
+  return [
+    isAuthenticated(request),
+    equal(resource.data.ownerId, request.auth.uid),
+    is(resource.data.memberIds, 'list'),
+    equal(resource.data.memberIds.size(), 1),
+    equal(resource.data.memberIds[0], request.auth.uid)
+  ]
+}
 
 const projectsRules = secure(projects, [
   rule('read', ({ resource, request }) => {
@@ -439,15 +448,23 @@ const projectsRules = secure(projects, [
     ]
   }),
 
-  rule('write', ({ request }) => {
-    const account = get(accounts, request.resource.data.accountId)
-    return [
-      isAuthenticated(request),
-      includes(account.data.memberIds, request.auth.uid),
-      is(request.resource.data.title, 'string')
-    ]
-  })
+  rule('create', ({ request }) =>
+    projectWriteRules(request, request.resource.data.accountId)
+  ),
+
+  rule('update', ({ request, resource }) =>
+    projectWriteRules(request, resource.data.accountId)
+  )
 ])
+
+function projectWriteRules(request: Request<Project>, accountId: string) {
+  const account = get(accounts, accountId)
+  return [
+    isAuthenticated(request),
+    includes(account.data.memberIds, request.auth.uid),
+    is(request.resource.data.title, 'string')
+  ]
+}
 
 const todosRules = secure(todos, [
   rule('read', ({ request, resource }) => {
@@ -456,17 +473,20 @@ const todosRules = secure(todos, [
     return [isAuthenticated(request), isMemberOf(request, account)]
   }),
 
-  rule('write', ({ request }) => {
-    const resource = request.resource
-    const project = get(projects, resource.data.projectId)
-    const account = get(accounts, project.data.accountId)
-    return [
-      isAuthenticated(request),
-      isMemberOf(request, account),
-      is(resource.data.title, 'string')
-    ]
-  })
+  rule('create', ({ request }) => projectTodoRules(request, request.resource)),
+
+  rule('update', ({ request, resource }) => projectTodoRules(request, resource))
 ])
+
+function projectTodoRules(request: Request<Todo>, resource: Resource<Todo>) {
+  const project = get(projects, resource.data.projectId)
+  const account = get(accounts, project.data.accountId)
+  return [
+    isAuthenticated(request),
+    isMemberOf(request, account),
+    is(resource.data.title, 'string')
+  ]
+}
 
 function isMemberOf(request: Request<any>, account: Resource<Account>) {
   return includes(account.data.memberIds, request.auth.uid)
@@ -569,11 +589,17 @@ describe('stringifyDatabaseRules', () => {
           ownerId: 'wrong-id',
           memberIds: ['wrong-id']
         })
-      ).rejects.toMatchSnapshot()
+      ).rejects.toMatchSnapshot('Adding an account with a wrong id')
       const account = await add(accounts, {
         ownerId: 'owner-id',
         memberIds: ['owner-id']
       })
+      await expect(
+        update(account.ref, {
+          ownerId: 'owner-id',
+          memberIds: ['owner-id']
+        })
+      )
 
       await expect(
         add(projects, {
@@ -581,23 +607,61 @@ describe('stringifyDatabaseRules', () => {
           title: false,
           accountId: account.id
         })
-      ).rejects.toMatchSnapshot()
+      ).rejects.toMatchSnapshot('Adding a project with a wrong payload')
       const project = await add(projects, {
         title: 'Demo project',
         accountId: account.id
       })
 
-      await add(todos, {
+      const todo = await add(todos, {
         title: 'Hello, world!',
         projectId: project.id
       })
+      await update(todo.ref, {
+        title: 'Hello, cruel world!'
+      })
+
       loginUser('another-id')
+      const anotherAccount = await add(accounts, {
+        ownerId: 'another-id',
+        memberIds: ['another-id']
+      })
+      const anotherProject = await add(projects, {
+        title: 'Demo project',
+        accountId: anotherAccount.ref.id
+      })
+
+      await expect(
+        update(account.ref, {
+          ownerId: 'another-id',
+          memberIds: ['another-id']
+        })
+      ).rejects.toMatchSnapshot(
+        'Updating an account not belonging to the current user'
+      )
+
       await expect(
         add(todos, {
           title: 'Hello, world!',
           projectId: project.id
         })
-      ).rejects.toMatchSnapshot()
+      ).rejects.toMatchSnapshot('Adding a todo to a wrong project')
+
+      await expect(
+        update(todo.ref, {
+          projectId: anotherProject.ref.id
+        })
+      ).rejects.toMatchSnapshot(
+        'Updating a todo not belonging to the current user'
+      )
+
+      await expect(
+        update(project.ref, {
+          accountId: anotherAccount.ref.id
+        })
+      ).rejects.toMatchSnapshot(
+        'Updating a project not belonging to the current user'
+      )
     })
   })
 })

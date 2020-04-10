@@ -7,19 +7,7 @@ Object {
     "path": "todos",
   },
   "rules": Object {
-    "read": Array [
-      Array [
-        "!=",
-        "request.auth.uid",
-        "null",
-      ],
-      Array [
-        "in",
-        "get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds",
-        "request.auth.uid",
-      ],
-    ],
-    "write": Array [
+    "create": Array [
       Array [
         "!=",
         "request.auth.uid",
@@ -36,6 +24,35 @@ Object {
         "string",
       ],
     ],
+    "read": Array [
+      Array [
+        "!=",
+        "request.auth.uid",
+        "null",
+      ],
+      Array [
+        "in",
+        "get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds",
+        "request.auth.uid",
+      ],
+    ],
+    "update": Array [
+      Array [
+        "!=",
+        "request.auth.uid",
+        "null",
+      ],
+      Array [
+        "in",
+        "get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds",
+        "request.auth.uid",
+      ],
+      Array [
+        "is",
+        "resource.data.title",
+        "string",
+      ],
+    ],
   },
 }
 `;
@@ -44,7 +61,9 @@ exports[`stringifyCollectionRules stringifies collection security rules 1`] = `
 "match /todos/{resourceId} {
   allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
 
-  allow write: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+  allow create: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+
+  allow update: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds && resource.data.title is string
 }"
 `;
 
@@ -61,35 +80,56 @@ service cloud.firestore {
     match /accounts/{resourceId} {
       allow read: if request.auth.uid != null && request.auth.uid in resource.data.memberIds
 
-      allow write: if request.auth.uid != null && request.resource.data.ownerId == request.auth.uid && request.resource.data.memberIds is list && request.resource.data.memberIds.size() == 1 && request.resource.data.memberIds[0] == request.auth.uid
+      allow create: if request.auth.uid != null && request.resource.data.ownerId == request.auth.uid && request.resource.data.memberIds is list && request.resource.data.memberIds.size() == 1 && request.resource.data.memberIds[0] == request.auth.uid
+
+      allow update: if request.auth.uid != null && resource.data.ownerId == request.auth.uid && resource.data.memberIds is list && resource.data.memberIds.size() == 1 && resource.data.memberIds[0] == request.auth.uid
     }
 
     match /projects/{resourceId} {
       allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds
 
-      allow write: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(request.resource.data.accountId)).data.memberIds && request.resource.data.title is string
+      allow create: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(request.resource.data.accountId)).data.memberIds && request.resource.data.title is string
+
+      allow update: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds && request.resource.data.title is string
     }
 
     match /todos/{resourceId} {
       allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
 
-      allow write: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+      allow create: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+
+      allow update: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds && resource.data.title is string
     }
   }
 }"
 `;
 
-exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules 1`] = `
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules: Adding a project with a wrong payload 1`] = `
+[FirebaseError: 7 PERMISSION_DENIED: 
+false for 'create' @ L15]
+`;
+
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules: Adding a todo to a wrong project 1`] = `
+[FirebaseError: 7 PERMISSION_DENIED: 
+false for 'create' @ L23]
+`;
+
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules: Adding an account with a wrong id 1`] = `
 [FirebaseError: 7 PERMISSION_DENIED: 
 false for 'create' @ L7]
 `;
 
-exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules 2`] = `
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules: Updating a project not belonging to the current user 1`] = `
 [FirebaseError: 7 PERMISSION_DENIED: 
-false for 'create' @ L13]
+false for 'update' @ L17]
 `;
 
-exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules 3`] = `
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules: Updating a todo not belonging to the current user 1`] = `
 [FirebaseError: 7 PERMISSION_DENIED: 
-false for 'create' @ L19]
+false for 'update' @ L25]
+`;
+
+exports[`stringifyDatabaseRules when the rules are loaded into the Firestore generates working security rules: Updating an account not belonging to the current user 1`] = `
+[FirebaseError: 7 PERMISSION_DENIED: 
+false for 'update' @ L9]
 `;

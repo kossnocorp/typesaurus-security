@@ -314,7 +314,14 @@ export function secure<Model extends object>(
   return { collection, rules: allRules }
 }
 
-export type RuleType = 'read' | 'write'
+export type RuleType =
+  | 'read'
+  | 'get'
+  | 'list'
+  | 'write'
+  | 'create'
+  | 'update'
+  | 'delete'
 
 export type RuleContext<Model extends object> = {
   request: Request<Model>
