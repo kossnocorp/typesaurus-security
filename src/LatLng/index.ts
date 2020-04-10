@@ -31,6 +31,6 @@ const latlng = {
    * @param lat The latitude.
    * @param lng The longitude.
    */
-  value(lat: number, lng: number): LatLng
+  // value(lat: number, lng: number): LatLng
 }
 export { latlng }

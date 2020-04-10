@@ -32,8 +32,7 @@ const duration = {
    * @param duration Duration value.
    * @returns The absolute duration value of the input.
    */
-  abs(duration: Duration): Duration {},
-
+  // abs(duration: Duration): Duration {},
   /**
    * Create a duration from hours, minutes, seconds, and nanoseconds.
    * https://firebase.google.com/docs/reference/rules/rules.duration_#.time
@@ -43,13 +42,12 @@ const duration = {
    * @param secs Seconds portion of the duration.
    * @param nanos Nanoseconds portion of the duration.
    */
-  time(hours: number, mins: number, secs: number, nanos: number): Duration {},
-
+  // time(hours: number, mins: number, secs: number, nanos: number): Duration {},
   /**
    * Create a duration from a numeric magnitude and string unit.
    * @param magnitude Unitless magnitude of the duration.
    * @param unit Unit of the duration.
    */
-  value(magnitude: number, unit: DurationUnit): Duration {}
+  // value(magnitude: number, unit: DurationUnit): Duration {}
 }
 export { duration }
