@@ -503,6 +503,11 @@ describe('secure', () => {
 })
 
 describe('stringifyRule', () => {
+  it('stringifies booleans', () => {
+    assert(stringifyRule(true) === 'true')
+    assert(stringifyRule(false) === 'false')
+  })
+
   it('stringifies equal rule', () => {
     assert(stringifyRule(['==', '1', '2']) === '1 == 2')
   })

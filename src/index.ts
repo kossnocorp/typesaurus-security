@@ -150,6 +150,7 @@ export type SecurityRule<_Model> =
   | SecurityRuleNot
   | SecurityRuleOr
   | SecurityRuleAnd
+  | boolean
 
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
@@ -359,6 +360,8 @@ export function rule<Model extends object>(
 }
 
 export function stringifyRule(rule: SecurityRule<any>): string {
+  if (typeof rule === 'boolean') return rule.toString()
+
   switch (rule[0]) {
     case '==':
     case '!=':
