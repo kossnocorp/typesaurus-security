@@ -28,22 +28,25 @@ export function resource<Model extends object>(
 }
 
 export function proxy<Type>(path: string, data: any = {}): Type {
-  return new Proxy(Object.assign(() => {}, data), {
-    apply(target, thisArg, argumentsList) {
-      return proxy<any>(`${path}(${argumentsList.map(resolve).join(', ')})`)
-    },
+  return new Proxy(
+    Object.assign(() => {}, data),
+    {
+      apply(target, thisArg, argumentsList) {
+        return proxy<any>(`${path}(${argumentsList.map(resolve).join(', ')})`)
+      },
 
-    get(target, prop, receiver) {
-      if (prop === '__resolve__') return path
-      const propStr = prop.toString()
-      const propPath = /^\d+$/.test(propStr) ? `[${propStr}]` : `.${propStr}`
-      return proxy<any>(`${path}${propPath}`)
-    },
+      get(target, prop, receiver) {
+        if (prop === '__resolve__') return path
+        const propStr = prop.toString()
+        const propPath = /^\d+$/.test(propStr) ? `[${propStr}]` : `.${propStr}`
+        return proxy<any>(`${path}${propPath}`)
+      },
 
-    has(target, key) {
-      return key === '__resolve__'
+      has(target, key) {
+        return key === '__resolve__'
+      }
     }
-  }) as Type
+  ) as Type
 }
 
 export function resolve(value: any): string {
@@ -224,6 +227,10 @@ export function stringifyRule(rule: SecurityRule<any>): string {
   switch (rule[0]) {
     case '==':
     case '!=':
+    case '<':
+    case '<=':
+    case '>':
+    case '>=':
     case 'is':
       return `${rule[1]} ${rule[0]} ${rule[2]}`
 
