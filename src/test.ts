@@ -1,5 +1,9 @@
 import assert from 'assert'
-import * as testing from '@firebase/testing'
+import {
+  initializeTestApp,
+  clearFirestoreData,
+  loadFirestoreRules
+} from '@firebase/rules-unit-testing'
 import {
   equal,
   notEqual,
@@ -29,14 +33,14 @@ import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
 
 const projectId = 'project-id'
 
-injectTestingAdaptor(testing.initializeTestApp({ projectId }))
+injectTestingAdaptor(initializeTestApp({ projectId }))
 
 function loginUser(uid: string) {
-  setApp(testing.initializeTestApp({ projectId, auth: { uid } }))
+  setApp(initializeTestApp({ projectId, auth: { uid } }))
 }
 
 function logoutUser() {
-  setApp(testing.initializeTestApp({ projectId, auth: null }))
+  setApp(initializeTestApp({ projectId, auth: null }))
 }
 
 type User = {
@@ -259,12 +263,14 @@ describe('or', () => {
     const accountResource = resource<Account>('request.resource')
     const result = or(
       [not(is(accountResource.data.memberIds, 'list'))],
-      [includes(accountResource.data.memberIds, '123')]
+      [includes(accountResource.data.memberIds, '123')],
+      [equal(1, 1)]
     )
     assert.deepEqual(result, [
       'or',
       [['not', ['is', 'request.resource.data.memberIds', 'list']]],
-      [['in', 'request.resource.data.memberIds', '"123"']]
+      [['in', 'request.resource.data.memberIds', '"123"']],
+      [['==', 1, 1]]
     ])
   })
 })
@@ -401,8 +407,10 @@ describe('stringifyRule', () => {
 describe('stringifyRules', () => {
   it('stringifies rules and concatenates them with &&', () => {
     assert(
-      stringifyRules([['!=', '1', '2'], ['in', '[1, 2, 3]', '1']]) ===
-        '1 != 2 && 1 in [1, 2, 3]'
+      stringifyRules([
+        ['!=', '1', '2'],
+        ['in', '[1, 2, 3]', '1']
+      ]) === '1 != 2 && 1 in [1, 2, 3]'
     )
   })
 })
@@ -427,7 +435,7 @@ describe('stringifyDatabaseRules', () => {
 
   describe('when the rules are loaded into the Firestore', () => {
     beforeEach(async () => {
-      await testing.loadFirestoreRules({
+      await loadFirestoreRules({
         projectId: 'project-id',
         rules: stringifyDatabaseRules([
           accountsRules,
@@ -438,7 +446,7 @@ describe('stringifyDatabaseRules', () => {
     })
 
     afterEach(async () => {
-      await testing.clearFirestoreData({ projectId: 'project-id' })
+      await clearFirestoreData({ projectId: 'project-id' })
     })
 
     it('generates working security rules', async () => {
@@ -458,23 +466,23 @@ describe('stringifyDatabaseRules', () => {
         add(projects, {
           // @ts-ignore
           title: false,
-          accountId: account.ref.id
+          accountId: account.id
         })
       ).rejects.toMatchSnapshot()
       const project = await add(projects, {
         title: 'Demo project',
-        accountId: account.ref.id
+        accountId: account.id
       })
 
       await add(todos, {
         title: 'Hello, world!',
-        projectId: project.ref.id
+        projectId: project.id
       })
       loginUser('another-id')
       await expect(
         add(todos, {
           title: 'Hello, world!',
-          projectId: project.ref.id
+          projectId: project.id
         })
       ).rejects.toMatchSnapshot()
     })

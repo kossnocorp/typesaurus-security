@@ -76,12 +76,13 @@ export type SecurityRule<_Model> =
   | SecurityRuleIs
   | SecurityRuleNot
   | SecurityRuleOr
+  | SecurityRuleAnd
 
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
 export type SecurityRuleNotEqual<Type> = ['!=', Type | string, Type | string]
 
-export type SecurityRuleLess = ['<', number | string, number | string]
+export type SecurityRuleLess = readonly ['<', number | string, number | string]
 
 export type SecurityRuleLessOrEqual = ['<=', number | string, number | string]
 
@@ -95,7 +96,19 @@ export type SecurityRuleIs = ['is', string, string]
 
 export type SecurityRuleNot = ['not', SecurityRule<any>]
 
-export type SecurityRuleOr = ['or', SecurityRule<any>[], SecurityRule<any>[]]
+export type SecurityRuleOr = readonly [
+  'or',
+  SecurityRule<any>[],
+  SecurityRule<any>[],
+  ...SecurityRule<any>[][]
+]
+
+export type SecurityRuleAnd = readonly [
+  'and',
+  SecurityRule<any>[],
+  SecurityRule<any>[],
+  ...SecurityRule<any>[][]
+]
 
 export function equal<Type>(a: Type, b: Type): SecurityRuleEqual<Type> {
   return ['==', resolve(a), resolve(b)]
@@ -148,9 +161,18 @@ export function not(rule: SecurityRule<any>): SecurityRuleNot {
 
 export function or(
   rulesA: SecurityRule<any>[],
-  rulesB: SecurityRule<any>[]
+  rulesB: SecurityRule<any>[],
+  ...restRules: SecurityRule<any>[][]
 ): SecurityRuleOr {
-  return ['or', rulesA, rulesB]
+  return ['or', rulesA, rulesB, ...restRules]
+}
+
+export function and(
+  rulesA: SecurityRule<any>[],
+  rulesB: SecurityRule<any>[],
+  ...restRules: SecurityRule<any>[][]
+): SecurityRuleAnd {
+  return ['and', rulesA, rulesB, ...restRules]
 }
 
 export function get<Model extends object>(
@@ -240,8 +262,15 @@ export function stringifyRule(rule: SecurityRule<any>): string {
     case 'not':
       return `!(${stringifyRule(rule[1])})`
 
-    case 'or':
-      return `(${stringifyRules(rule[1])}) || (${stringifyRules(rule[2])})`
+    case 'or': {
+      const [_, ...conditions] = rule
+      return `(${conditions.map(stringifyRules).join(' || ')})`
+    }
+
+    case 'and': {
+      const [_, ...conditions] = rule
+      return `(${conditions.map(stringifyRules).join(' && ')})`
+    }
   }
 }
 

@@ -2,11 +2,11 @@
 .PHONY: build
 
 test:
-	npx firebase emulators:exec --only firestore "${BIN}/jest --env node"
+	npx firebase emulators:exec --only firestore "npx jest --env node"
 .PHONY: test
 
 test-watch:
-	npx firebase emulators:exec --only firestore "${BIN}/jest --env node --watch"
+	npx firebase emulators:exec --only firestore "npx jest --env node --watch"
 
 test-setup:
 	npx firebase setup:emulators:firestore
