@@ -547,9 +547,15 @@ describe('stringifyRule', () => {
 describe('stringifyRules', () => {
   it('stringifies rules and concatenates them with &&', () => {
     assert(
-      stringifyRules([['!=', '1', '2'], ['in', '[1, 2, 3]', '1']]) ===
-        '1 != 2 && 1 in [1, 2, 3]'
+      stringifyRules([
+        ['!=', '1', '2'],
+        ['in', '[1, 2, 3]', '1']
+      ]) === '(1 != 2 && 1 in [1, 2, 3])'
     )
+  })
+
+  it('does not wrap single rules in parentheses', () => {
+    assert(stringifyRules([['!=', '1', '2']]) === '1 != 2')
   })
 })
 
@@ -600,7 +606,7 @@ describe('stringifyDatabaseRules', () => {
         memberIds: ['owner-id']
       })
       await expect(
-        update(account.ref, {
+        update(account, {
           ownerId: 'owner-id',
           memberIds: ['owner-id']
         })
@@ -622,7 +628,7 @@ describe('stringifyDatabaseRules', () => {
         title: 'Hello, world!',
         projectId: project.id
       })
-      await update(todo.ref, {
+      await update(todo, {
         title: 'Hello, cruel world!'
       })
 
@@ -633,11 +639,11 @@ describe('stringifyDatabaseRules', () => {
       })
       const anotherProject = await add(projects, {
         title: 'Demo project',
-        accountId: anotherAccount.ref.id
+        accountId: anotherAccount.id
       })
 
       await expect(
-        update(account.ref, {
+        update(account, {
           ownerId: 'another-id',
           memberIds: ['another-id']
         })
@@ -653,16 +659,16 @@ describe('stringifyDatabaseRules', () => {
       ).rejects.toMatchSnapshot('Adding a todo to a wrong project')
 
       await expect(
-        update(todo.ref, {
-          projectId: anotherProject.ref.id
+        update(todo, {
+          projectId: anotherProject.id
         })
       ).rejects.toMatchSnapshot(
         'Updating a todo not belonging to the current user'
       )
 
       await expect(
-        update(project.ref, {
-          accountId: anotherAccount.ref.id
+        update(project, {
+          accountId: anotherAccount.id
         })
       ).rejects.toMatchSnapshot(
         'Updating a project not belonging to the current user'

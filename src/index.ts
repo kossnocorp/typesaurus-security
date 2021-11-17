@@ -104,22 +104,25 @@ export function resource<Model extends object>(
 }
 
 export function proxy<Type>(path: string, data: any = {}): Type {
-  return new Proxy(Object.assign(() => {}, data), {
-    apply(target, thisArg, argumentsList) {
-      return proxy<any>(`${path}(${argumentsList.map(resolve).join(', ')})`)
-    },
+  return new Proxy(
+    Object.assign(() => {}, data),
+    {
+      apply(target, thisArg, argumentsList) {
+        return proxy<any>(`${path}(${argumentsList.map(resolve).join(', ')})`)
+      },
 
-    get(target, prop, receiver) {
-      if (prop === '__resolve__') return path
-      const propStr = prop.toString()
-      const propPath = /^\d+$/.test(propStr) ? `[${propStr}]` : `.${propStr}`
-      return proxy<any>(`${path}${propPath}`)
-    },
+      get(target, prop, receiver) {
+        if (prop === '__resolve__') return path
+        const propStr = prop.toString()
+        const propPath = /^\d+$/.test(propStr) ? `[${propStr}]` : `.${propStr}`
+        return proxy<any>(`${path}${propPath}`)
+      },
 
-    has(target, key) {
-      return key === '__resolve__'
+      has(target, key) {
+        return key === '__resolve__'
+      }
     }
-  }) as Type
+  ) as Type
 }
 
 export function resolve(value: any): string {
@@ -391,7 +394,13 @@ export function stringifyRule(rule: SecurityRule<any>): string {
 }
 
 export function stringifyRules(rules: SecurityRule<any>[]) {
-  return rules.map(stringifyRule).join(' && ')
+  const result = rules.map(stringifyRule).join(' && ')
+
+  if (rules.length > 1) {
+    return `(${result})`
+  } else {
+    return result
+  }
 }
 
 export function stringifyCollectionRules<Model>({

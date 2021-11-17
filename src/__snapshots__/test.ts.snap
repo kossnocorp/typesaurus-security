@@ -59,11 +59,11 @@ Object {
 
 exports[`stringifyCollectionRules stringifies collection security rules 1`] = `
 "match /todos/{resourceId} {
-  allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
+  allow read: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds)
 
-  allow create: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+  allow create: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string)
 
-  allow update: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds && resource.data.title is string
+  allow update: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds && resource.data.title is string)
 }"
 `;
 
@@ -74,31 +74,31 @@ service cloud.firestore {
     match /users/{resourceId} {
       allow read, write: if request.auth.uid == resourceId
 
-      allow write: if request.auth.uid != null && resourceId == request.auth.uid && (!(\\"firstName\\" in request.resource.data) || request.resource.data.firstName is string)
+      allow write: if (request.auth.uid != null && resourceId == request.auth.uid && (!(\\"firstName\\" in request.resource.data) || request.resource.data.firstName is string))
     }
 
     match /accounts/{resourceId} {
-      allow read: if request.auth.uid != null && request.auth.uid in resource.data.memberIds
+      allow read: if (request.auth.uid != null && request.auth.uid in resource.data.memberIds)
 
-      allow create: if request.auth.uid != null && request.resource.data.ownerId == request.auth.uid && request.resource.data.memberIds is list && request.resource.data.memberIds.size() == 1 && request.resource.data.memberIds[0] == request.auth.uid
+      allow create: if (request.auth.uid != null && request.resource.data.ownerId == request.auth.uid && request.resource.data.memberIds is list && request.resource.data.memberIds.size() == 1 && request.resource.data.memberIds[0] == request.auth.uid)
 
-      allow update: if request.auth.uid != null && resource.data.ownerId == request.auth.uid && resource.data.memberIds is list && resource.data.memberIds.size() == 1 && resource.data.memberIds[0] == request.auth.uid
+      allow update: if (request.auth.uid != null && resource.data.ownerId == request.auth.uid && resource.data.memberIds is list && resource.data.memberIds.size() == 1 && resource.data.memberIds[0] == request.auth.uid)
     }
 
     match /projects/{resourceId} {
-      allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds
+      allow read: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds)
 
-      allow create: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(request.resource.data.accountId)).data.memberIds && request.resource.data.title is string
+      allow create: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(request.resource.data.accountId)).data.memberIds && request.resource.data.title is string)
 
-      allow update: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds && request.resource.data.title is string
+      allow update: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(resource.data.accountId)).data.memberIds && request.resource.data.title is string)
     }
 
     match /todos/{resourceId} {
-      allow read: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds
+      allow read: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds)
 
-      allow create: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string
+      allow create: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.accountId)).data.memberIds && request.resource.data.title is string)
 
-      allow update: if request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds && resource.data.title is string
+      allow update: if (request.auth.uid != null && request.auth.uid in get(/databases/$(database)/documents/accounts/$(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.accountId)).data.memberIds && resource.data.title is string)
     }
   }
 }"
