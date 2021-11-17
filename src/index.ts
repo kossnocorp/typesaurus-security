@@ -82,7 +82,7 @@ export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
 export type SecurityRuleNotEqual<Type> = ['!=', Type | string, Type | string]
 
-export type SecurityRuleLess = readonly ['<', number | string, number | string]
+export type SecurityRuleLess = ['<', number | string, number | string]
 
 export type SecurityRuleLessOrEqual = ['<=', number | string, number | string]
 
@@ -96,14 +96,14 @@ export type SecurityRuleIs = ['is', string, string]
 
 export type SecurityRuleNot = ['not', SecurityRule<any>]
 
-export type SecurityRuleOr = readonly [
+export type SecurityRuleOr = [
   'or',
   SecurityRule<any>[],
   SecurityRule<any>[],
   ...SecurityRule<any>[][]
 ]
 
-export type SecurityRuleAnd = readonly [
+export type SecurityRuleAnd = [
   'and',
   SecurityRule<any>[],
   SecurityRule<any>[],
@@ -160,19 +160,41 @@ export function not(rule: SecurityRule<any>): SecurityRuleNot {
 }
 
 export function or(
-  rulesA: SecurityRule<any>[],
-  rulesB: SecurityRule<any>[],
-  ...restRules: SecurityRule<any>[][]
+  rulesA: SecurityRule<any> | SecurityRule<any>[],
+  rulesB: SecurityRule<any> | SecurityRule<any>[],
+  ...restRules: (SecurityRule<any> | SecurityRule<any>[])[]
 ): SecurityRuleOr {
-  return ['or', rulesA, rulesB, ...restRules]
+  return [
+    'or',
+    normalizeRules(rulesA),
+    normalizeRules(rulesB),
+    ...restRules.map(normalizeRules)
+  ]
 }
 
 export function and(
-  rulesA: SecurityRule<any>[],
-  rulesB: SecurityRule<any>[],
-  ...restRules: SecurityRule<any>[][]
+  rulesA: SecurityRule<any> | SecurityRule<any>[],
+  rulesB: SecurityRule<any> | SecurityRule<any>[],
+  ...restRules: (SecurityRule<any> | SecurityRule<any>[])[]
 ): SecurityRuleAnd {
-  return ['and', rulesA, rulesB, ...restRules]
+  return [
+    'and',
+    normalizeRules(rulesA),
+    normalizeRules(rulesB),
+    ...restRules.map(normalizeRules)
+  ]
+}
+
+function normalizeRules(
+  rules: SecurityRule<any> | SecurityRule<any>[]
+): SecurityRule<any>[] {
+  return isRuleOrRules(rules) ? [rules] : rules
+}
+
+function isRuleOrRules(
+  maybeRule: SecurityRule<any> | SecurityRule<any>[]
+): maybeRule is SecurityRule<any> {
+  return Array.isArray(maybeRule) && typeof maybeRule[0] === 'string'
 }
 
 export function get<Model extends object>(

@@ -26,7 +26,8 @@ import {
   less,
   lessOrEqual,
   more,
-  moreOrEqual
+  moreOrEqual,
+  and
 } from '.'
 import { collection, set, add } from 'typesaurus'
 import { injectTestingAdaptor, setApp } from 'typesaurus/testing'
@@ -259,7 +260,20 @@ describe('not', () => {
 })
 
 describe('or', () => {
-  it('generatesnAST for or', () => {
+  it('generates AST for or', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = or(
+      [not(is(accountResource.data.memberIds, 'list'))],
+      [includes(accountResource.data.memberIds, '123')]
+    )
+    assert.deepEqual(result, [
+      'or',
+      [['not', ['is', 'request.resource.data.memberIds', 'list']]],
+      [['in', 'request.resource.data.memberIds', '"123"']]
+    ])
+  })
+
+  it('allows to pass more than two items', () => {
     const accountResource = resource<Account>('request.resource')
     const result = or(
       [not(is(accountResource.data.memberIds, 'list'))],
@@ -268,6 +282,66 @@ describe('or', () => {
     )
     assert.deepEqual(result, [
       'or',
+      [['not', ['is', 'request.resource.data.memberIds', 'list']]],
+      [['in', 'request.resource.data.memberIds', '"123"']],
+      [['==', 1, 1]]
+    ])
+  })
+
+  it('normalizes rules', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = or(
+      not(is(accountResource.data.memberIds, 'list')),
+      [includes(accountResource.data.memberIds, '123')],
+      equal(1, 1)
+    )
+    assert.deepEqual(result, [
+      'or',
+      [['not', ['is', 'request.resource.data.memberIds', 'list']]],
+      [['in', 'request.resource.data.memberIds', '"123"']],
+      [['==', 1, 1]]
+    ])
+  })
+})
+
+describe('and', () => {
+  it('generates AST for and', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = and(
+      [not(is(accountResource.data.memberIds, 'list'))],
+      [includes(accountResource.data.memberIds, '123')]
+    )
+    assert.deepEqual(result, [
+      'and',
+      [['not', ['is', 'request.resource.data.memberIds', 'list']]],
+      [['in', 'request.resource.data.memberIds', '"123"']]
+    ])
+  })
+
+  it('allows to pass more than two items', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = and(
+      [not(is(accountResource.data.memberIds, 'list'))],
+      [includes(accountResource.data.memberIds, '123')],
+      [equal(1, 1)]
+    )
+    assert.deepEqual(result, [
+      'and',
+      [['not', ['is', 'request.resource.data.memberIds', 'list']]],
+      [['in', 'request.resource.data.memberIds', '"123"']],
+      [['==', 1, 1]]
+    ])
+  })
+
+  it('normalizes rules', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = and(
+      not(is(accountResource.data.memberIds, 'list')),
+      [includes(accountResource.data.memberIds, '123')],
+      equal(1, 1)
+    )
+    assert.deepEqual(result, [
+      'and',
       [['not', ['is', 'request.resource.data.memberIds', 'list']]],
       [['in', 'request.resource.data.memberIds', '"123"']],
       [['==', 1, 1]]

@@ -55,7 +55,7 @@ service cloud.firestore {
     match /users/{resourceId} {
       allow read, write: if request.auth.uid == resourceId
 
-      allow write: if request.auth.uid != null && resourceId == request.auth.uid && (!(\\"firstName\\" in request.resource.data)) || (request.resource.data.firstName is string)
+      allow write: if request.auth.uid != null && resourceId == request.auth.uid && (!(\\"firstName\\" in request.resource.data) || request.resource.data.firstName is string)
     }
 
     match /accounts/{resourceId} {
