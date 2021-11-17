@@ -1,23 +1,22 @@
 .DEFAULT_GOAL := build
 .PHONY: build
 
-BIN = $(shell yarn bin)
-
 test:
-	${BIN}/firebase emulators:exec --only firestore "${BIN}/jest --env node"
+	npx firebase emulators:exec --only firestore "${BIN}/jest --env node"
 .PHONY: test
 
 test-watch:
-	${BIN}/firebase emulators:exec --only firestore "${BIN}/jest --env node --watch"
+	npx firebase emulators:exec --only firestore "${BIN}/jest --env node --watch"
 
 test-setup:
-	${BIN}/firebase setup:emulators:firestore
+	npx firebase setup:emulators:firestore
 
 build:
 	@rm -rf lib
-	@${BIN}/tsc
-	@${BIN}/prettier "lib/**/*.[jt]s" --write --loglevel silent
-	@cp {package.json,*.md} lib
+	@npx tsc
+	@npx prettier "lib/**/*.[jt]s" --write --loglevel silent
+	@cp package.json lib
+	@cp *.md lib
 	@rsync --archive --prune-empty-dirs --exclude '*.ts' --relative src/./ lib
 
 publish: build
@@ -27,5 +26,5 @@ publish-next: build
 	cd lib && npm publish --access public --tag next
 
 docs:
-	@${BIN}/typedoc --theme minimal --name Typesaurus Security
+	@npx typedoc --theme minimal --name Typesaurus Security
 .PHONY: docs
