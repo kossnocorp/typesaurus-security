@@ -240,6 +240,15 @@ describe('includes', () => {
     const result = includes(accountResource.data.memberIds, '123')
     assert.deepEqual(result, ['in', 'request.resource.data.memberIds', '"123"'])
   })
+
+  it('allows to search for optional values', () => {
+    const accountResource = resource<Account>('request.resource')
+    const result = includes(
+      accountResource.data.memberIds,
+      '123' as string | null | undefined
+    )
+    assert.deepEqual(result, ['in', 'request.resource.data.memberIds', '"123"'])
+  })
 })
 
 describe('describe', () => {
@@ -375,7 +384,7 @@ describe('context', () => {
   it('includes request', () => {
     type Model = { foo: string; bar: number }
     const { request } = context<Model>()
-    assertType<string>(request.auth.uid)
+    assertType<string | null>(request.auth.uid)
     assertType<Model>(request.resource.data)
     assertType<List<'foo' | 'bar'>>(request.writeFields)
   })

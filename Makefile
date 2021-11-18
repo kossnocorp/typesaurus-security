@@ -13,11 +13,11 @@ test-setup:
 
 build:
 	@rm -rf lib
-	@npx tsc
+	@npx tsc -p tsconfig.lib.json
 	@npx prettier "lib/**/*.[jt]s" --write --loglevel silent
 	@cp package.json lib
 	@cp *.md lib
-	@rsync --archive --prune-empty-dirs --exclude '*.ts' --relative src/./ lib
+	@rsync --archive --prune-empty-dirs --exclude '*.ts' --exclude '*.snap' --relative src/./ lib
 
 publish: build
 	cd lib && npm publish --access public

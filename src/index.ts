@@ -211,9 +211,9 @@ export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
   return ['>=', resolve(a), resolve(b)]
 }
 
-export function includes<Type>(
+export function includes<Type, SearchType extends Type | undefined | null>(
   array: List<Type>,
-  item: Type
+  item: SearchType
 ): SecurityRuleIncludes<Type>
 
 export function includes<Type extends object>(
