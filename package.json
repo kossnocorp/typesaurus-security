@@ -1,6 +1,6 @@
 {
   "name": "@typesaurus/security",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Type-safe natural DSL for writing Firestore security rules",
   "keywords": [
     "Firebase",
