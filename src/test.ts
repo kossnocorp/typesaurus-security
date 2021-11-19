@@ -164,6 +164,10 @@ describe('equal', () => {
       '"Sasha"'
     ])
   })
+
+  it('allows to pass undefined and null', () => {
+    assert.deepEqual(equal(1, undefined), ['==', 1, 'null'])
+  })
 })
 
 describe('notEqual', () => {
@@ -267,6 +271,11 @@ describe('not', () => {
       'not',
       ['is', 'request.resource.data.memberIds', 'list']
     ])
+  })
+
+  it('allows to pass null and undefined', () => {
+    const result = not(true as boolean | null | undefined)
+    assert.deepEqual(result, ['not', true])
   })
 })
 

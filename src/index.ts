@@ -154,6 +154,8 @@ export type SecurityRule<_Model> =
   | SecurityRuleOr
   | SecurityRuleAnd
   | boolean
+  | null
+  | undefined
 
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
@@ -211,9 +213,9 @@ export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
   return ['>=', resolve(a), resolve(b)]
 }
 
-export function includes<Type, SearchType extends Type | undefined | null>(
+export function includes<Type, CompareType extends Type | undefined | null>(
   array: List<Type>,
-  item: SearchType
+  item: CompareType
 ): SecurityRuleIncludes<Type>
 
 export function includes<Type extends object>(
@@ -364,6 +366,7 @@ export function rule<Model extends object>(
 
 export function stringifyRule(rule: SecurityRule<any>): string {
   if (typeof rule === 'boolean') return rule.toString()
+  if (rule == null) return 'null'
 
   switch (rule[0]) {
     case '==':
