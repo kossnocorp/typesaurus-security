@@ -173,7 +173,7 @@ export type SecurityRuleIncludes<Type> = ['in', string, Type | string]
 
 export type SecurityRuleIs = ['is', string, string]
 
-export type SecurityRuleNot = ['not', SecurityRule<any>]
+export type SecurityRuleNot = ['not', SecurityRule<any> | string]
 
 export type SecurityRuleOr = [
   'or',
@@ -234,8 +234,8 @@ export function is<Type>(value: Type, type: RulesType): SecurityRuleIs {
   return ['is', resolve(value), type]
 }
 
-export function not(rule: SecurityRule<any>): SecurityRuleNot {
-  return ['not', rule]
+export function not(value: any): SecurityRuleNot {
+  return ['not', isRule(value) ? value : resolve(value)]
 }
 
 export function or(
@@ -273,7 +273,15 @@ function normalizeRules(
 function isRuleOrRules(
   maybeRule: SecurityRule<any> | SecurityRule<any>[]
 ): maybeRule is SecurityRule<any> {
-  return Array.isArray(maybeRule) && typeof maybeRule[0] === 'string'
+  return !Array.isArray(maybeRule) || typeof maybeRule[0] === 'string'
+}
+
+function isRule(maybeRule: any): maybeRule is SecurityRule<any> {
+  return (
+    maybeRule == null ||
+    typeof maybeRule === 'boolean' ||
+    (Array.isArray(maybeRule) && typeof maybeRule[0] === 'string')
+  )
 }
 
 export function get<Model extends object>(

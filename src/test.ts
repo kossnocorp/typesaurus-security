@@ -273,6 +273,12 @@ describe('not', () => {
     ])
   })
 
+  it('resolves values', () => {
+    const userResource = resource<User>('request.resource')
+    const result = not(userResource.data.lastName)
+    assert.deepEqual(result, ['not', 'request.resource.data.lastName'])
+  })
+
   it('allows to pass null and undefined', () => {
     const result = not(true as boolean | null | undefined)
     assert.deepEqual(result, ['not', true])
