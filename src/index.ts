@@ -390,7 +390,7 @@ export function stringifyRule(rule: SecurityRule<any>): string {
       return `${rule[2]} in ${rule[1]}`
 
     case 'not':
-      return `!(${stringifyRule(rule[1])})`
+      return `!(${isRule(rule[1]) ? stringifyRule(rule[1]) : rule[1]})`
 
     case 'or': {
       const [_, ...conditions] = rule
