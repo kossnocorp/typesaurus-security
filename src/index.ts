@@ -402,6 +402,10 @@ export function stringifyRule(rule: SecurityRule<any>): string {
       return `(${conditions.map(stringifyRules).join(' && ')})`
     }
   }
+
+  // It's ok, the code is actually used because of proxies that pretend to be
+  // booleans and other types.
+  return resolve(rule)
 }
 
 export function stringifyRules(rules: SecurityRule<any>[]) {

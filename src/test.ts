@@ -566,6 +566,14 @@ describe('stringifyRule', () => {
         'request.resource.data.memberIds is list'
     )
   })
+
+  it('stringifies proxies', () => {
+    assert(
+      stringifyRule(
+        proxy<Request<Account>>('request').writeFields.hasOnly(['ownerId'])
+      ) === 'request.writeFields.hasOnly(["ownerId"])'
+    )
+  })
 })
 
 describe('stringifyRules', () => {
