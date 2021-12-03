@@ -3,6 +3,77 @@ import { Collection } from 'typesaurus'
 export * from './Boolean'
 
 /**
+ * A set is an unordered collection. A set cannot contain duplicate items.
+ * https://firebase.google.com/docs/reference/rules/rules.Set
+ *
+ * | Firebase | Typesaurus     | Description                                         |
+ * |----------|----------------|-----------------------------------------------------|
+ * | x == y   | equal(x, y)    | Compare sets x and y                                |
+ * | v in x   | includes(x, v) | Check if value v exists in set x.                   |
+ */
+export interface Set<Item> {
+  /**
+   * Returns a set that is the difference between the set calling difference()
+   * and the set passed to difference(). That is, returns a set containing
+   * the elements in the comparison set that are not in the specified set.
+   * https://firebase.google.com/docs/reference/rules/rules.Set#difference
+   */
+  difference: <CompareToItem>(
+    compareTo: Set<CompareToItem>
+  ) => Set<Exclude<Item, CompareToItem>>
+
+  /**
+   * Test whether the set calling hasAll() contains all of the items in
+   * the comparison set passed to hasAll().
+   * https://firebase.google.com/docs/reference/rules/rules.Set#hasAny
+   */
+  hasAll: (keys: Item[]) => boolean
+
+  /**
+   * Test whether the set calling hasAny() contains any of the items in the set
+   * or list passed to hasAny().
+   * https://firebase.google.com/docs/reference/rules/rules.Set#hasAny
+   */
+  hasAny: (keys: Item[]) => boolean
+
+  /**
+   * Test whether the set calling hasOnly() contains only the items in
+   * the comparison set or list passed to hasOnly().
+   * https://firebase.google.com/docs/reference/rules/rules.Set#hasOnly
+   */
+  hasOnly: (keys: Item[]) => boolean
+
+  /**
+   * Returns a set that is the intersection between the set calling
+   * intersection() and the set passed to intersection(). That is, returns
+   * a set containing the elements the sets have in common.
+   *
+   * If the sets have no elements in common, returns an empty set (size() == 0).
+   *
+   * https://firebase.google.com/docs/reference/rules/rules.Set#intersection
+   */
+  intersection: <CompareToItem>(
+    compareTo: Set<CompareToItem>
+  ) => Set<Exclude<Item, Exclude<Item, CompareToItem>>>
+
+  /**
+   * Returns the size of the set.
+   * https://firebase.google.com/docs/reference/rules/rules.Set#size
+   */
+  size: () => number
+
+  /**
+   * Returns a set that is the union of the set calling union() and the set
+   * passed to union(). That is, returns a set that contains all elements from
+   * both sets.
+   * https://firebase.google.com/docs/reference/rules/rules.Set#union
+   */
+  union: <UnionWithItem>(
+    unionWith: Set<UnionWithItem>
+  ) => Set<Item & UnionWithItem>
+}
+
+/**
  * List type represents the Firebase's List
  * https://firebase.google.com/docs/reference/rules/rules.List
  *
@@ -13,7 +84,7 @@ export * from './Boolean'
  * | x[i:j]   | range(x, y)    | TODO: Range operator, get sublist from index i to j |
  * | v in x   | includes(x, v) | Check if value v exists in list x                   |
  */
-export type List<Item> = {
+export interface List<Item> {
   [index: number]: Item
 
   /**
@@ -90,7 +161,57 @@ export type Map<MapSource extends object> = {
    * Get the list of values in the map.
    * https://firebase.google.com/docs/reference/rules/rules.Map#values
    */
-  values: () => any // TODO?
+  values: () => List<MapSource[keyof MapSource]>
+
+  /**
+   * Return a MapDiff representing the result of comparing the current Map to a
+   * comparison Map.
+   * https://firebase.google.com/docs/reference/rules/rules.Map#diff
+   */
+  diff: <CompareToSource extends object>(
+    compareTo: CompareToSource | Map<CompareToSource>
+  ) => MapDiff<MapSource, CompareToSource>
+}
+
+/**
+ * The MapDiff type represents the result of comparing two {@link Map} objects.
+ * https://firebase.google.com/docs/reference/rules/rules.MapDiff
+ */
+export interface MapDiff<
+  Source extends object,
+  CompareToSource extends object
+> {
+  /**
+   * Returns a {@link Set}, which lists any keys that the {@link Map} calling
+   * {@link Map.diff} contains that the {@link Map} passed to {@link Map.diff}
+   * does not.
+   *
+   * https://firebase.google.com/docs/reference/rules/rules.MapDiff#addedKeys
+   */
+  addedKeys: () => Set<keyof Source & keyof CompareToSource> // TODO: Reproduce the actual type
+
+  /**
+   * Returns a {@link Set}, which lists any keys that have been added to,
+   * removed from or modified from the {@link Map} calling {@link Map.diff}
+   * compared to the {@link Map} passed to {@link Map.diff}. This function
+   * returns the set equivalent to the combined results of {@link addedKeys},
+   * {@link removedKeys} and {@link changedKeys}.
+   */
+  affectedKeys: () => Set<keyof Source & keyof CompareToSource> // TODO: Reproduce the actual type
+
+  /**
+   * Returns a {@link Set}, which lists any keys that appear in both
+   * the {@link Map} calling {@link Map.diff} and the {@link Map} passed to
+   * {@link Map.diff}, but whose values are not equal.
+   */
+  changedKeys: () => Set<keyof Source & keyof CompareToSource> // TODO: Reproduce the actual type
+
+  /**
+   * Returns a {@link Set}, which lists any keys that the {@link Map} calling
+   * {@link Map.diff} does not contain compared to the {@link Map} passed to
+   * {@link Map.diff}.
+   */
+  removedKeys: () => Set<keyof Source & keyof CompareToSource> // TODO: Reproduce the actual type
 }
 
 export type Resource<Model extends object> = {
