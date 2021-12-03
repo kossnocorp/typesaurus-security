@@ -297,7 +297,6 @@ export function get<Model extends object>(
 export type Request<Model extends object> = {
   auth: Auth
   resource: Resource<Model>
-  writeFields: List<keyof Model>
 }
 
 type Auth =
