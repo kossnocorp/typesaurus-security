@@ -349,6 +349,8 @@ export type SecurityRule<_Model> =
   | SecurityRuleLessOrEqual
   | SecurityRuleMore
   | SecurityRuleMoreOrEqual
+  | SecurityRuleSub
+  | SecurityRuleAdd
   | SecurityRuleIncludes<any>
   | SecurityRuleIs
   | SecurityRuleNot
@@ -369,6 +371,10 @@ export type SecurityRuleLessOrEqual = ['<=', number | string, number | string]
 export type SecurityRuleMore = ['>', number | string, number | string]
 
 export type SecurityRuleMoreOrEqual = ['>=', number | string, number | string]
+
+export type SecurityRuleSub = ['sub', number | string, number | string]
+
+export type SecurityRuleAdd = ['add', number | string, number | string]
 
 export type SecurityRuleIncludes<Type> = ['in', string, Type | string]
 
@@ -412,6 +418,14 @@ export function more(a: number, b: number): SecurityRuleMore {
 
 export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
   return ['>=', resolve(a), resolve(b)]
+}
+
+export function sub(a: number, b: number): SecurityRuleSub {
+  return ['sub', resolve(a), resolve(b)]
+}
+
+export function add(a: number, b: number): SecurityRuleAdd {
+  return ['add', resolve(a), resolve(b)]
 }
 
 export function includes<Type, CompareType extends Type | undefined | null>(
@@ -586,6 +600,12 @@ export function stringifyRule(rule: SecurityRule<any>): string {
     case '>=':
     case 'is':
       return `${rule[1]} ${rule[0]} ${rule[2]}`
+
+    case 'sub':
+      return `${rule[1]} - ${rule[2]}`
+
+    case 'add':
+      return `${rule[1]} + ${rule[2]}`
 
     case 'in':
       return `${rule[2]} in ${rule[1]}`
