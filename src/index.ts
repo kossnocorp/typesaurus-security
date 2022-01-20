@@ -1,4 +1,4 @@
-import { Collection } from 'typesaurus'
+import { Collection, ServerDate } from 'typesaurus'
 
 export * from './Boolean'
 
@@ -132,6 +132,8 @@ export interface List<Item> {
 export type Map<MapSource extends object> = {
   [FieldName in keyof MapSource]: MapSource[FieldName] extends Array<infer Item>
     ? List<Item>
+    : MapSource[FieldName] extends Date | ServerDate
+    ? Timestamp
     : MapSource[FieldName] extends object
     ? Map<MapSource[FieldName]>
     : MapSource[FieldName]
