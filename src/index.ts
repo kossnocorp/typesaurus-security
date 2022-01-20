@@ -214,6 +214,86 @@ export interface MapDiff<
   removedKeys: () => Set<keyof Source & keyof CompareToSource> // TODO: Reproduce the actual type
 }
 
+/**
+ * A timestamp in UTC with nanosecond accuracy.
+ */
+export interface Timestamp {
+  /**
+   * Timestamp value containing year, month, and day only.
+   */
+  date(): Timestamp
+
+  /**
+   * Get the day value of the timestamp.
+   */
+  day(): number
+
+  /**
+   * Get the day of the week as a value from 1 to 7.
+   */
+  dayOfWeek(): number
+
+  /**
+   * Get the day of the year as a value from 1 to 366.
+   */
+  dayOfYear(): number
+
+  /**
+   * Get the hours value of the timestamp.
+   */
+  hours(): number
+
+  /**
+   * Get the minutes value of the timestamp.
+   */
+  minutes(): number
+
+  /**
+   * Get the month value of the timestamp.
+   */
+  month(): number
+
+  /**
+   * Get the nanos value of the timestamp.
+   */
+  nanos(): number
+
+  /**
+   * Get the seconds value of the timestamp.
+   */
+  seconds(): number
+
+  /**
+   * Get the duration value from the time portion of the timestamp.
+   */
+  time(): Duration
+
+  /**
+   * Get the time in milliseconds since the epoch.
+   */
+  toMillis(): number
+
+  /**
+   * Get the year value of the timestamp.
+   */
+  year(): number
+}
+
+/**
+ * Duration with nanosecond accuracy.
+ */
+export interface Duration {
+  /**
+   * Get the nanoseconds portion (signed) of the duration from -999,999,999 to +999,999,999 inclusive.
+   */
+  nanos(): number
+
+  /**
+   * Get the seconds portion (signed) of the duration from -315,576,000,000 to +315,576,000,000 inclusive.
+   */
+  seconds(): number
+}
+
 export type Resource<Model extends object> = {
   data: Map<Model>
 }
@@ -418,6 +498,7 @@ export function get<Model extends object>(
 export type Request<Model extends object> = {
   auth: Auth
   resource: Resource<Model>
+  time: Timestamp
 }
 
 type Auth =
