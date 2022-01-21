@@ -428,27 +428,45 @@ export function notEqual<Type>(a: Type, b: Type): SecurityRuleNotEqual<Type> {
   return ['!=', resolve(a), resolve(b)]
 }
 
-export function less(a: number, b: number): SecurityRuleLess {
+export function less(
+  a: number | SecurityRuleMath,
+  b: number | SecurityRuleMath
+): SecurityRuleLess {
   return ['<', resolve(a), resolve(b)]
 }
 
-export function lessOrEqual(a: number, b: number): SecurityRuleLessOrEqual {
+export function lessOrEqual(
+  a: number | SecurityRuleMath,
+  b: number | SecurityRuleMath
+): SecurityRuleLessOrEqual {
   return ['<=', resolve(a), resolve(b)]
 }
 
-export function more(a: number, b: number): SecurityRuleMore {
+export function more(
+  a: number | SecurityRuleMath,
+  b: number | SecurityRuleMath
+): SecurityRuleMore {
   return ['>', resolve(a), resolve(b)]
 }
 
-export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
+export function moreOrEqual(
+  a: number | SecurityRuleMath,
+  b: number | SecurityRuleMath
+): SecurityRuleMoreOrEqual {
   return ['>=', resolve(a), resolve(b)]
 }
 
-export function sub(a: number, b: number): SecurityRuleSub {
+export function sub(
+  a: number | SecurityRuleMath,
+  b: number | SecurityRuleMath
+): SecurityRuleSub {
   return ['-', resolve(a), resolve(b)]
 }
 
-export function sum(a: number, b: number): SecurityRuleAdd {
+export function sum(
+  a: number | SecurityRuleMath,
+  b: number | SecurityRuleMath
+): SecurityRuleAdd {
   return ['+', resolve(a), resolve(b)]
 }
 
