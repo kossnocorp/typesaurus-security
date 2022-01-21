@@ -168,7 +168,8 @@ describe('equal', () => {
   })
 
   it('allows to pass undefined and null', () => {
-    assert.deepEqual(equal(1, undefined), ['==', 1, 'null'])
+    assert.deepStrictEqual(equal(1, undefined), ['==', '1', 'null'])
+    assert.deepStrictEqual(equal(1, null), ['==', '1', 'null'])
   })
 })
 
@@ -198,6 +199,20 @@ describe('less', () => {
     const bill = proxy<Bill>('bill')
     const result = less(bill.amount, 14)
     assert.deepEqual(result, ['<', 'bill.amount', '14'])
+  })
+
+  it('accepts the ', () => {
+    type Model = { createdAt: Date }
+    const { request, resource } = context<Model>()
+    const result = less(
+      request.time.toMillis(),
+      sum(resource.data.createdAt.toMillis(), 10800000) // 3 hours
+    )
+    assert.deepStrictEqual(result, [
+      '<',
+      'request.time.toMillis()',
+      ['+', 'resource.data.createdAt.toMillis()', '10800000']
+    ])
   })
 })
 

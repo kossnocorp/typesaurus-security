@@ -342,6 +342,10 @@ export function resolve(value: any): string {
   }
 }
 
+function resolveRuleSegement(value: any): SecurityRule<any> | string {
+  return Array.isArray(value) && isRule(value) ? value : resolve(value)
+}
+
 export type RulesType = 'list' | 'map' | 'string'
 
 export type SecurityRule<_Model> =
@@ -364,41 +368,53 @@ export type SecurityRule<_Model> =
 
 export type SecurityRuleMath = SecurityRuleSub | SecurityRuleAdd
 
-export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
+export type SecurityRuleEqual<Type> = [
+  '==',
+  SecurityRule<any> | Type | string,
+  SecurityRule<any> | Type | string
+]
 
-export type SecurityRuleNotEqual<Type> = ['!=', Type | string, Type | string]
+export type SecurityRuleNotEqual<Type> = [
+  '!=',
+  Type | string | SecurityRule<any>,
+  Type | string | SecurityRule<any>
+]
 
 export type SecurityRuleLess = [
   '<',
-  number | string | SecurityRuleMath,
-  number | string | SecurityRuleMath
+  number | string | SecurityRule<any>,
+  number | string | SecurityRule<any>
 ]
 
 export type SecurityRuleLessOrEqual = [
   '<=',
-  number | string | SecurityRuleMath,
-  number | string | SecurityRuleMath
+  number | string | SecurityRule<any>,
+  number | string | SecurityRule<any>
 ]
 
 export type SecurityRuleMore = [
   '>',
-  number | string | SecurityRuleMath,
-  number | string | SecurityRuleMath
+  number | string | SecurityRule<any>,
+  number | string | SecurityRule<any>
 ]
 
 export type SecurityRuleMoreOrEqual = [
   '>=',
-  number | string | SecurityRuleMath,
-  number | string | SecurityRuleMath
+  number | string | SecurityRule<any>,
+  number | string | SecurityRule<any>
 ]
 
 export type SecurityRuleSub = [
   '-',
-  number | string | SecurityRuleMath,
-  number | string | SecurityRuleMath
+  number | string | SecurityRule<any>,
+  number | string | SecurityRule<any>
 ]
 
-export type SecurityRuleAdd = ['+', number | string, number | string]
+export type SecurityRuleAdd = [
+  '+',
+  number | string | SecurityRule<any>,
+  number | string | SecurityRule<any>
+]
 
 export type SecurityRuleIncludes<Type> = ['in', string, Type | string]
 
@@ -421,53 +437,53 @@ export type SecurityRuleAnd = [
 ]
 
 export function equal<Type>(a: Type, b: Type): SecurityRuleEqual<Type> {
-  return ['==', resolve(a), resolve(b)]
+  return ['==', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function notEqual<Type>(a: Type, b: Type): SecurityRuleNotEqual<Type> {
-  return ['!=', resolve(a), resolve(b)]
+  return ['!=', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function less(
   a: number | SecurityRuleMath,
   b: number | SecurityRuleMath
 ): SecurityRuleLess {
-  return ['<', resolve(a), resolve(b)]
+  return ['<', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function lessOrEqual(
   a: number | SecurityRuleMath,
   b: number | SecurityRuleMath
 ): SecurityRuleLessOrEqual {
-  return ['<=', resolve(a), resolve(b)]
+  return ['<=', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function more(
   a: number | SecurityRuleMath,
   b: number | SecurityRuleMath
 ): SecurityRuleMore {
-  return ['>', resolve(a), resolve(b)]
+  return ['>', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function moreOrEqual(
   a: number | SecurityRuleMath,
   b: number | SecurityRuleMath
 ): SecurityRuleMoreOrEqual {
-  return ['>=', resolve(a), resolve(b)]
+  return ['>=', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function sub(
   a: number | SecurityRuleMath,
   b: number | SecurityRuleMath
 ): SecurityRuleSub {
-  return ['-', resolve(a), resolve(b)]
+  return ['-', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function sum(
   a: number | SecurityRuleMath,
   b: number | SecurityRuleMath
 ): SecurityRuleAdd {
-  return ['+', resolve(a), resolve(b)]
+  return ['+', resolveRuleSegement(a), resolveRuleSegement(b)]
 }
 
 export function includes<Type, CompareType extends Type | undefined | null>(
