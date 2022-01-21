@@ -401,7 +401,7 @@ describe('context', () => {
     const { request } = context<Model>()
     assertType<string | null>(request.auth.uid)
     assertType<Model>(request.resource.data)
-    assertType<List<'foo' | 'bar'>>(request.writeFields)
+    assertType<List<any>>(request.resource.data.keys())
   })
 
   it('includes resource', () => {
@@ -570,8 +570,10 @@ describe('stringifyRule', () => {
   it('stringifies proxies', () => {
     assert(
       stringifyRule(
-        proxy<Request<Account>>('request').writeFields.hasOnly(['ownerId'])
-      ) === 'request.writeFields.hasOnly(["ownerId"])'
+        proxy<Request<Account>>('request')
+          .time.time()
+          .nanos()
+      ) === 'request.time.time().nanos()'
     )
   })
 })
