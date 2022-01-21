@@ -31,7 +31,9 @@ import {
   stringifyCollectionRules,
   stringifyDatabaseRules,
   stringifyRule,
-  stringifyRules
+  stringifyRules,
+  sub,
+  sum
 } from '.'
 
 const projectId = 'project-id'
@@ -43,7 +45,7 @@ function loginUser(uid: string) {
 }
 
 function logoutUser() {
-  setApp(initializeTestApp({ projectId, auth: null }))
+  setApp(initializeTestApp({ projectId, auth: undefined }))
 }
 
 type User = {
@@ -235,6 +237,32 @@ describe('moreOrEqual', () => {
     const bill = proxy<Bill>('bill')
     const result = moreOrEqual(bill.amount, 14)
     assert.deepEqual(result, ['>=', 'bill.amount', '14'])
+  })
+})
+
+describe('sub', () => {
+  it('returns AST for -', () => {
+    assert.deepStrictEqual(sub(1, 2), ['-', '1', '2'])
+  })
+
+  it('resolves proxies', () => {
+    type Bill = { amount: number }
+    const bill = proxy<Bill>('bill')
+    const result = sub(bill.amount, 14)
+    assert.deepStrictEqual(result, ['-', 'bill.amount', '14'])
+  })
+})
+
+describe('sum', () => {
+  it('returns AST for +', () => {
+    assert.deepStrictEqual(sum(1, 2), ['+', '1', '2'])
+  })
+
+  it('resolves proxies', () => {
+    type Bill = { amount: number }
+    const bill = proxy<Bill>('bill')
+    const result = sum(bill.amount, 14)
+    assert.deepStrictEqual(result, ['+', 'bill.amount', '14'])
   })
 })
 
@@ -532,28 +560,91 @@ describe('stringifyRule', () => {
     assert(stringifyRule(false) === 'false')
   })
 
-  it('stringifies equal rule', () => {
-    assert(stringifyRule(['==', '1', '2']) === '1 == 2')
+  it('stringifies null', () => {
+    assert(stringifyRule(null) === 'null')
   })
 
-  it('stringifies not equal rule', () => {
-    assert(stringifyRule(['!=', '1', '2']) === '1 != 2')
+  it('stringifies number', () => {
+    assert(stringifyRule(1) === '1')
+    assert(stringifyRule(42) === '42')
   })
 
-  it('stringifies less rule', () => {
-    assert(stringifyRule(['<', '1', '2']) === '1 < 2')
+  describe('equal', () => {
+    it('stringifies equal rule', () => {
+      assert(stringifyRule(['==', '1', '2']) === '1 == 2')
+    })
+
+    it('stringifies the nested rules', () => {
+      assert(
+        stringifyRule(['==', ['-', '1', '2'], ['+', '3', '4']]) ===
+          '1 - 2 == 3 + 4'
+      )
+    })
   })
 
-  it('stringifies less or equal rule', () => {
-    assert(stringifyRule(['<=', '1', '2']) === '1 <= 2')
+  describe('not equal', () => {
+    it('stringifies not equal rule', () => {
+      assert(stringifyRule(['!=', '1', '2']) === '1 != 2')
+    })
+
+    it('stringifies the nested rules', () => {
+      assert(
+        stringifyRule(['!=', ['-', '1', '2'], ['+', '3', '4']]) ===
+          '1 - 2 != 3 + 4'
+      )
+    })
   })
 
-  it('stringifies more rule', () => {
-    assert(stringifyRule(['>', '1', '2']) === '1 > 2')
+  describe('less', () => {
+    it('stringifies less rule', () => {
+      assert(stringifyRule(['<', '1', '2']) === '1 < 2')
+    })
+
+    it('stringifies the nested rules', () => {
+      assert(
+        stringifyRule(['<', ['-', '1', '2'], ['+', '3', '4']]) ===
+          '1 - 2 < 3 + 4'
+      )
+    })
   })
 
-  it('stringifies more or equal rule', () => {
-    assert(stringifyRule(['>=', '1', '2']) === '1 >= 2')
+  describe('less or equal', () => {
+    it('stringifies less or equal rule', () => {
+      assert(stringifyRule(['<=', '1', '2']) === '1 <= 2')
+    })
+
+    it('stringifies the nested rules', () => {
+      assert(
+        stringifyRule(['<=', ['-', '1', '2'], ['+', '3', '4']]) ===
+          '1 - 2 <= 3 + 4'
+      )
+    })
+  })
+
+  describe('more', () => {
+    it('stringifies more rule', () => {
+      assert(stringifyRule(['>', '1', '2']) === '1 > 2')
+    })
+
+    it('stringifies the nested rules', () => {
+      assert(
+        stringifyRule(['>', ['-', '1', '2'], ['+', '3', '4']]) ===
+          '1 - 2 > 3 + 4'
+      )
+    })
+  })
+
+  describe('more or equal', () => {
+    it('stringifies more or equal rule', () => {
+      assert(stringifyRule(['>=', '1', '2']) === '1 >= 2')
+    })
+
+    it('stringifies the nested rules', () => {
+      assert(
+        stringifyRule(['>=', ['-', '1', '2'], ['+', '3', '4']]) ===
+          '1 - 2 >= 3 + 4'
+      )
+    })
   })
 
   it('stringifies includes rule', () => {

@@ -351,32 +351,54 @@ export type SecurityRule<_Model> =
   | SecurityRuleLessOrEqual
   | SecurityRuleMore
   | SecurityRuleMoreOrEqual
-  | SecurityRuleSub
-  | SecurityRuleAdd
+  | SecurityRuleMath
   | SecurityRuleIncludes<any>
   | SecurityRuleIs
   | SecurityRuleNot
   | SecurityRuleOr
   | SecurityRuleAnd
   | boolean
+  | number
   | null
   | undefined
+
+export type SecurityRuleMath = SecurityRuleSub | SecurityRuleAdd
 
 export type SecurityRuleEqual<Type> = ['==', Type | string, Type | string]
 
 export type SecurityRuleNotEqual<Type> = ['!=', Type | string, Type | string]
 
-export type SecurityRuleLess = ['<', number | string, number | string]
+export type SecurityRuleLess = [
+  '<',
+  number | string | SecurityRuleMath,
+  number | string | SecurityRuleMath
+]
 
-export type SecurityRuleLessOrEqual = ['<=', number | string, number | string]
+export type SecurityRuleLessOrEqual = [
+  '<=',
+  number | string | SecurityRuleMath,
+  number | string | SecurityRuleMath
+]
 
-export type SecurityRuleMore = ['>', number | string, number | string]
+export type SecurityRuleMore = [
+  '>',
+  number | string | SecurityRuleMath,
+  number | string | SecurityRuleMath
+]
 
-export type SecurityRuleMoreOrEqual = ['>=', number | string, number | string]
+export type SecurityRuleMoreOrEqual = [
+  '>=',
+  number | string | SecurityRuleMath,
+  number | string | SecurityRuleMath
+]
 
-export type SecurityRuleSub = ['sub', number | string, number | string]
+export type SecurityRuleSub = [
+  '-',
+  number | string | SecurityRuleMath,
+  number | string | SecurityRuleMath
+]
 
-export type SecurityRuleAdd = ['add', number | string, number | string]
+export type SecurityRuleAdd = ['+', number | string, number | string]
 
 export type SecurityRuleIncludes<Type> = ['in', string, Type | string]
 
@@ -423,11 +445,11 @@ export function moreOrEqual(a: number, b: number): SecurityRuleMoreOrEqual {
 }
 
 export function sub(a: number, b: number): SecurityRuleSub {
-  return ['sub', resolve(a), resolve(b)]
+  return ['-', resolve(a), resolve(b)]
 }
 
-export function add(a: number, b: number): SecurityRuleAdd {
-  return ['add', resolve(a), resolve(b)]
+export function sum(a: number, b: number): SecurityRuleAdd {
+  return ['+', resolve(a), resolve(b)]
 }
 
 export function includes<Type, CompareType extends Type | undefined | null>(
@@ -590,7 +612,9 @@ export function rule<Model extends object>(
 }
 
 export function stringifyRule(rule: SecurityRule<any>): string {
-  if (typeof rule === 'boolean') return rule.toString()
+  if (typeof rule === 'boolean' || typeof rule === 'number')
+    return rule.toString()
+
   if (rule == null) return 'null'
 
   switch (rule[0]) {
@@ -600,20 +624,21 @@ export function stringifyRule(rule: SecurityRule<any>): string {
     case '<=':
     case '>':
     case '>=':
+    case '-':
+    case '+':
     case 'is':
-      return `${rule[1]} ${rule[0]} ${rule[2]}`
+      return [
+        stringifyRuleSegment(rule[1]),
+        rule[0],
+        stringifyRuleSegment(rule[2])
+      ].join(' ')
 
-    case 'sub':
-      return `${rule[1]} - ${rule[2]}`
-
-    case 'add':
-      return `${rule[1]} + ${rule[2]}`
-
+    // TODO: Swap it to match the rest rules
     case 'in':
       return `${rule[2]} in ${rule[1]}`
 
     case 'not':
-      return `!(${isRule(rule[1]) ? stringifyRule(rule[1]) : rule[1]})`
+      return `!(${stringifyRuleSegment(rule[1])})`
 
     case 'or': {
       const [_, ...conditions] = rule
@@ -670,6 +695,10 @@ ${rules
   }
 }
 `.trim()
+}
+
+function stringifyRuleSegment(ruleSegment: any): string {
+  return isRule(ruleSegment) ? stringifyRule(ruleSegment) : ruleSegment
 }
 
 function indentAll(str: string, indentSize: number = 1) {
