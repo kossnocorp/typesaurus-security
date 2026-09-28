@@ -1,16 +1,16 @@
 {
   "name": "@typesaurus/security",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "Type-safe natural DSL for writing Firestore security rules",
   "keywords": [
     "Firebase",
     "Firestore",
     "TypeScript"
   ],
-  "main": "index.js",
-  "repository": "https://github.com/kossnocorp/typesaurus-security",
-  "author": "Sasha Koss <koss@nocorp.me>",
   "license": "MIT",
+  "author": "Sasha Koss <koss@nocorp.me>",
+  "repository": "https://github.com/kossnocorp/typesaurus-security",
+  "main": "index.js",
   "devDependencies": {
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
